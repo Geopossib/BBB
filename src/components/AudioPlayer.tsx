@@ -14,7 +14,7 @@ interface AudioPlayerProps {
 const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) => {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null); // Ref for the actual <audio> element
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -22,14 +22,13 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (!waveformRef.current) return;
-    
-    // Create an audio element if it doesn't exist
-    if (!audioRef.current) {
-        audioRef.current = document.createElement('audio');
-    }
-    audioRef.current.src = src;
+    // Ensure both the waveform container and the audio element are available
+    if (!waveformRef.current || !audioRef.current) return;
 
+    // Destroy previous instance if it exists
+    if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+    }
 
     const wavesurfer = WaveSurfer.create({
       container: waveformRef.current,
@@ -40,7 +39,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
       barWidth: 3,
       barGap: 3,
       barRadius: 2,
-      media: audioRef.current,
+      media: audioRef.current, // Use the <audio> element as the media source
       barAlign: 'bottom',
     });
 
@@ -50,7 +49,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
       setTotalDuration(duration);
       setIsReady(true);
     };
-
+    
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onFinish = () => setIsPlaying(false);
@@ -62,16 +61,11 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
     wavesurfer.on('finish', onFinish);
     wavesurfer.on('timeupdate', onTimeUpdate);
 
-
     return () => {
-      wavesurfer.un('ready', onReady);
-      wavesurfer.un('play', onPlay);
-      wavesurfer.un('pause', onPause);
-      wavesurfer.un('finish', onFinish);
-      wavesurfer.un('timeupdate', onTimeUpdate);
+      // No need to remove specific listeners if we destroy the instance
       wavesurfer.destroy();
     };
-  }, [src]);
+  }, [src]); // Re-run this effect ONLY when the src changes
 
   const handlePlayPause = useCallback(() => {
     if (wavesurferRef.current) {
@@ -102,6 +96,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
 
   return (
     <div className="flex flex-col gap-2">
+      <audio ref={audioRef} src={src} crossOrigin="anonymous" preload="metadata" hidden />
       <div ref={waveformRef} className="w-full cursor-pointer" />
       <div className="flex items-center justify-between gap-4">
         <span className="text-sm font-mono text-muted-foreground w-14 text-center">
