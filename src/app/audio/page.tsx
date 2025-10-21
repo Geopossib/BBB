@@ -1,10 +1,47 @@
-import { getAudioFiles } from '@/lib/data';
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getAudioFiles, AudioFile } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AudioPlayer from '@/components/AudioPlayer';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default async function AudioPage() {
-  const audioFiles = await getAudioFiles();
+export default function AudioPage() {
+  const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadAudio() {
+      try {
+        const fetchedAudio = await getAudioFiles();
+        setAudioFiles(fetchedAudio);
+      } catch (error) {
+        console.error("Error fetching audio files:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAudio();
+  }, []);
+
+  const LoadingSkeleton = () => (
+    <div className="max-w-4xl mx-auto space-y-6">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i} className="overflow-hidden">
+          <CardHeader>
+            <Skeleton className="h-5 w-20 mb-2" />
+            <Skeleton className="h-7 w-3/4" />
+            <Skeleton className="h-4 w-full mt-2" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-16 w-full" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -14,24 +51,26 @@ export default async function AudioPage() {
           Daily devotionals, in-depth teachings, and guided prayers.
         </p>
       </div>
-      <div className="max-w-4xl mx-auto space-y-6">
-        {audioFiles.map((audio) => (
-          <Card key={audio.id} className="overflow-hidden">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                  <div>
-                    <Badge variant="secondary" className="mb-2">{audio.category}</Badge>
-                    <CardTitle className="font-headline text-2xl">{audio.title}</CardTitle>
-                  </div>
-              </div>
-              <CardDescription className="pt-2">{audio.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AudioPlayer src={audio.audioUrl} duration={audio.duration} />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {loading ? <LoadingSkeleton /> : (
+        <div className="max-w-4xl mx-auto space-y-6">
+          {audioFiles.map((audio) => (
+            <Card key={audio.id} className="overflow-hidden">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                    <div>
+                      <Badge variant="secondary" className="mb-2">{audio.category}</Badge>
+                      <CardTitle className="font-headline text-2xl">{audio.title}</CardTitle>
+                    </div>
+                </div>
+                <CardDescription className="pt-2">{audio.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AudioPlayer src={audio.audioUrl} duration={audio.duration} />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

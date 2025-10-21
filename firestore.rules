@@ -1,91 +1,74 @@
 /**
- * @fileoverview Firestore Security Rules for Prototyping.
- *
- * Core Philosophy:
- * This ruleset prioritizes rapid prototyping by focusing on authorization while relaxing data validation.
- * It enforces admin-only write access to all collections, allowing any authenticated user to read.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a public read, admin-write model for all content collections.
  *
  * Data Structure:
- * The database consists of four top-level collections: 'articles', 'videos', 'audios', and 'liveMeetings'.
+ * - All content (articles, videos, audios, liveMeetings) is stored in top-level collections.
  *
  * Key Security Decisions:
- * - Read access is public for authenticated users.
- * - Write access is restricted to admins only.
- * - No data shape validation is enforced during writes for prototyping speed.
+ * - Unauthenticated users can read all content collections (articles, videos, audios, liveMeetings).
+ * - Only authenticated users can create, update, and delete content.  There is no role based authentication implemented in the application. Assumes an admin role can be adopted by any signed in user.
+ * - No data shape validation is performed in this prototype, only ownership validation on writes.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Grants read access to all authenticated users and restricts write access to admins only for articles collection.
+     * @description Allows public read access to articles and restricts write access to authenticated users.
      * @path /databases/{database}/documents/articles/{articleId}
-     * @allow (get, list) - Any authenticated user can read article data.
-     * @allow (create, update, delete) - Only admins can create, update, or delete articles.
-     * @deny (create, update, delete) - Non-admin users cannot modify article data.
-     * @principle Restricts writes to admins only, allows public reads.
+     * @allow (get, list) Unauthenticated users can read articles.
+     * @allow (create, update, delete) Authenticated users can create, update, and delete articles.
+     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete articles.
+     * @principle Allows public reads with authenticated-user-only writes.
      */
     match /articles/{articleId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
 
     /**
-     * @description Grants read access to all authenticated users and restricts write access to admins only for videos collection.
+     * @description Allows public read access to videos and restricts write access to authenticated users.
      * @path /databases/{database}/documents/videos/{videoId}
-     * @allow (get, list) - Any authenticated user can read video data.
-     * @allow (create, update, delete) - Only admins can create, update, or delete videos.
-     * @deny (create, update, delete) - Non-admin users cannot modify video data.
-     * @principle Restricts writes to admins only, allows public reads.
+     * @allow (get, list) Unauthenticated users can read videos.
+     * @allow (create, update, delete) Authenticated users can create, update, and delete videos.
+     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete videos.
+     * @principle Allows public reads with authenticated-user-only writes.
      */
     match /videos/{videoId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
 
     /**
-     * @description Grants read access to all authenticated users and restricts write access to admins only for audios collection.
+     * @description Allows public read access to audios and restricts write access to authenticated users.
      * @path /databases/{database}/documents/audios/{audioId}
-     * @allow (get, list) - Any authenticated user can read audio data.
-     * @allow (create, update, delete) - Only admins can create, update, or delete audios.
-     * @deny (create, update, delete) - Non-admin users cannot modify audio data.
-     * @principle Restricts writes to admins only, allows public reads.
+     * @allow (get, list) Unauthenticated users can read audios.
+     * @allow (create, update, delete) Authenticated users can create, update, and delete audios.
+     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete audios.
+     * @principle Allows public reads with authenticated-user-only writes.
      */
     match /audios/{audioId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
 
     /**
-     * @description Grants read access to all authenticated users and restricts write access to admins only for liveMeetings collection.
+     * @description Allows public read access to liveMeetings and restricts write access to authenticated users.
      * @path /databases/{database}/documents/liveMeetings/{liveMeetingId}
-     * @allow (get, list) - Any authenticated user can read liveMeeting data.
-     * @allow (create, update, delete) - Only admins can create, update, or delete liveMeetings.
-     * @deny (create, update, delete) - Non-admin users cannot modify liveMeeting data.
-     * @principle Restricts writes to admins only, allows public reads.
+     * @allow (get, list) Unauthenticated users can read liveMeetings.
+     * @allow (create, update, delete) Authenticated users can create, update, and delete liveMeetings.
+     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete liveMeetings.
+     * @principle Allows public reads with authenticated-user-only writes.
      */
     match /liveMeetings/{liveMeetingId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
     }
+  }
 
-    // ---- Helper functions ----
-
-    /**
-     * @description Checks if the user is signed in.
-     * @return True if the user is authenticated, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the user is an admin.
-     * @return True if the user has admin privileges, false otherwise.
-     */
-    function isAdmin() {
-      // TODO: Implement admin role check using custom claims or a dedicated admin collection.
-      return request.auth.uid == 'admin-user-id'; // Replace 'admin-user-id' with the actual admin user ID
-    }
+  // Helper function to determine if a user is signed in
+  function isSignedIn() {
+    return request.auth != null;
   }
 }

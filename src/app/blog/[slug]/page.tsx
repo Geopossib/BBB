@@ -1,9 +1,14 @@
-import { getArticleBySlug, getArticles } from '@/lib/data';
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getArticleBySlug, Article } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Calendar, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type ArticlePageProps = {
   params: {
@@ -11,19 +16,53 @@ type ArticlePageProps = {
   };
 };
 
-// Generate static paths for all articles
-export async function generateStaticParams() {
-  const articles = await getArticles();
-  return articles.map((article) => ({
-    slug: article.slug,
-  }));
-}
+export default function ArticlePage({ params }: ArticlePageProps) {
+  const [article, setArticle] = useState<Article | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function ArticlePage({ params }: ArticlePageProps) {
-  const article = await getArticleBySlug(params.slug);
+  useEffect(() => {
+    async function loadArticle() {
+      try {
+        const fetchedArticle = await getArticleBySlug(params.slug);
+        if (!fetchedArticle) {
+          notFound();
+        }
+        setArticle(fetchedArticle);
+      } catch (error) {
+        console.error("Error fetching article:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadArticle();
+  }, [params.slug]);
+
+  if (loading) {
+    return (
+      <div>
+        <header className="relative h-[40vh] md:h-[50vh] w-full">
+            <Skeleton className="h-full w-full"/>
+        </header>
+         <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto py-8">
+                 <div className="flex items-center space-x-6 text-muted-foreground mb-8 border-b pb-4">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-32" />
+                 </div>
+                 <div className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-full" />
+                 </div>
+            </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!article) {
-    notFound();
+    return null; // Or some other not found component
   }
 
   const imageUrl = PlaceHolderImages.find((img) => img.id === article.imageId)?.imageUrl || 'https://picsum.photos/seed/placeholder/1200/800';

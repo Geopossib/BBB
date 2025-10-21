@@ -1,7 +1,13 @@
-import { getVideoById, getVideos } from '@/lib/data';
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getVideoById, Video } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Clock } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 type VideoPageProps = {
   params: {
@@ -9,18 +15,56 @@ type VideoPageProps = {
   };
 };
 
-export async function generateStaticParams() {
-  const videos = await getVideos();
-  return videos.map((video) => ({
-    id: video.id,
-  }));
-}
 
-export default async function VideoPage({ params }: VideoPageProps) {
-  const video = await getVideoById(params.id);
+export default function VideoPage({ params }: VideoPageProps) {
+  const [video, setVideo] = useState<Video | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadVideo() {
+      try {
+        const fetchedVideo = await getVideoById(params.id);
+        if (!fetchedVideo) {
+          notFound();
+        }
+        setVideo(fetchedVideo);
+      } catch (error) {
+        console.error("Error fetching video:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadVideo();
+  }, [params.id]);
+
+
+  if (loading) {
+    return (
+        <div className="container mx-auto px-4 py-12">
+            <div className="flex flex-col lg:flex-row gap-8">
+                <div className="lg:w-2/3 w-full">
+                    <Skeleton className="aspect-video w-full mb-4 rounded-lg" />
+                     <div className="bg-card border rounded-lg p-6">
+                        <Skeleton className="h-5 w-24 mb-4" />
+                        <Skeleton className="h-8 w-3/4 mb-4" />
+                        <Skeleton className="h-5 w-full" />
+                     </div>
+                </div>
+                 <div className="lg:w-1/3 w-full">
+                    <h2 className="text-2xl font-headline font-bold mb-4">More Videos</h2>
+                    <div className="space-y-4">
+                        <Skeleton className="h-20 w-full" />
+                        <Skeleton className="h-20 w-full" />
+                        <Skeleton className="h-20 w-full" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+  }
 
   if (!video) {
-    notFound();
+    return null; // Or some other not found component
   }
 
   return (

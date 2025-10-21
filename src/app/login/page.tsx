@@ -1,10 +1,24 @@
+'use client';
+
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
 
 export default function LoginPage() {
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    // If user is not logged in and not loading, sign them in anonymously
+    if (!user && !isUserLoading && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
+  
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] py-12">
       <Card className="mx-auto max-w-sm w-full">

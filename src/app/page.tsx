@@ -1,23 +1,66 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getArticles, getVideos, getAudioFiles } from '@/lib/data';
+import { getArticles, getVideos, getAudioFiles, Article, Video, AudioFile } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowRight, Film, Mic, BookOpen } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default async function Home() {
-  const latestVideos = await getVideos({ limit: 3 });
-  const latestArticles = await getArticles({ limit: 3 });
-  const latestAudio = await getAudioFiles({ limit: 3 });
+export default function Home() {
+  const [latestVideos, setLatestVideos] = useState<Video[]>([]);
+  const [latestArticles, setLatestArticles] = useState<Article[]>([]);
+  const [latestAudio, setLatestAudio] = useState<AudioFile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [videos, articles, audio] = await Promise.all([
+          getVideos({ limit: 3 }),
+          getArticles({ limit: 3 }),
+          getAudioFiles({ limit: 3 })
+        ]);
+        setLatestVideos(videos);
+        setLatestArticles(articles);
+        setLatestAudio(audio);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const getImage = (id: string) => {
-    return PlaceHolderImages.find((img) => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/400/300';
+    return PlaceHolderImages.find((img) => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/400/300`;
   };
 
   const getImageHint = (id: string) => {
     return PlaceHolderImages.find((img) => img.id === id)?.imageHint || 'placeholder image';
   }
+
+  const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i} className="overflow-hidden h-full flex flex-col">
+          <Skeleton className="aspect-video w-full" />
+          <CardHeader>
+            <Skeleton className="h-6 w-3/4" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-5/6" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 
   return (
     <div className="flex flex-col">
@@ -45,32 +88,34 @@ export default async function Home() {
               <Link href="/videos">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {latestVideos.map((video) => (
-              <Link href={`/videos/${video.id}`} key={video.id} className="group">
-                <Card className="overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  <div className="relative aspect-video">
-                    <Image
-                      src={getImage(video.thumbnailId)}
-                      alt={video.title}
-                      fill
-                      className="object-cover"
-                      data-ai-hint={getImageHint(video.thumbnailId)}
-                    />
-                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                        <Film className="h-12 w-12 text-white/80" />
-                     </div>
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="font-headline text-xl">{video.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-muted-foreground line-clamp-3">{video.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          {loading ? <LoadingSkeleton /> : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {latestVideos.map((video) => (
+                <Link href={`/videos/${video.id}`} key={video.id} className="group">
+                  <Card className="overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div className="relative aspect-video">
+                      <Image
+                        src={getImage(video.thumbnailId)}
+                        alt={video.title}
+                        fill
+                        className="object-cover"
+                        data-ai-hint={getImageHint(video.thumbnailId)}
+                      />
+                       <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                          <Film className="h-12 w-12 text-white/80" />
+                       </div>
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="font-headline text-xl">{video.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <p className="text-muted-foreground line-clamp-3">{video.description}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Recent Articles */}
@@ -81,32 +126,34 @@ export default async function Home() {
               <Link href="/blog">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {latestArticles.map((article) => (
-              <Link href={`/blog/${article.slug}`} key={article.id} className="group">
-                <Card className="overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  <div className="relative aspect-video">
-                    <Image
-                      src={getImage(article.imageId)}
-                      alt={article.title}
-                      fill
-                      className="object-cover"
-                      data-ai-hint={getImageHint(article.imageId)}
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                        <BookOpen className="h-12 w-12 text-white/80" />
-                     </div>
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="font-headline text-xl">{article.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-muted-foreground line-clamp-3">{article.excerpt}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          {loading ? <LoadingSkeleton /> : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {latestArticles.map((article) => (
+                <Link href={`/blog/${article.slug}`} key={article.id} className="group">
+                  <Card className="overflow-hidden h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div className="relative aspect-video">
+                      <Image
+                        src={getImage(article.imageId)}
+                        alt={article.title}
+                        fill
+                        className="object-cover"
+                        data-ai-hint={getImageHint(article.imageId)}
+                      />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                          <BookOpen className="h-12 w-12 text-white/80" />
+                       </div>
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="font-headline text-xl">{article.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <p className="text-muted-foreground line-clamp-3">{article.excerpt}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* New Audio Teachings */}
@@ -117,23 +164,25 @@ export default async function Home() {
               <Link href="/audio">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {latestAudio.map((audio) => (
-              <Link href="/audio" key={audio.id} className="group">
-                <Card className="h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  <CardHeader className="flex flex-row items-center gap-4">
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <Mic className="h-8 w-8 text-primary" />
-                    </div>
-                    <CardTitle className="font-headline text-xl flex-1">{audio.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-muted-foreground line-clamp-3">{audio.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          {loading ? <LoadingSkeleton /> : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {latestAudio.map((audio) => (
+                <Link href="/audio" key={audio.id} className="group">
+                  <Card className="h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <CardHeader className="flex flex-row items-center gap-4">
+                      <div className="bg-secondary p-4 rounded-lg">
+                        <Mic className="h-8 w-8 text-primary" />
+                      </div>
+                      <CardTitle className="font-headline text-xl flex-1">{audio.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <p className="text-muted-foreground line-clamp-3">{audio.description}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>
