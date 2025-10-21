@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,12 +11,20 @@ import AudioRecorder from '@/components/AudioRecorder';
 import LiveMeetingForm from './LiveMeetingForm';
 
 export default function UploadPage() {
-  const [activeTab, setActiveTab] = useState("article");
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tab || "article");
+
+  useEffect(() => {
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [tab]);
 
   return (
     <div>
       <h1 className="text-3xl font-headline font-bold mb-6">Upload Content</h1>
-      <Tabs defaultValue="article" value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="article">Article</TabsTrigger>
           <TabsTrigger value="video">Video</TabsTrigger>

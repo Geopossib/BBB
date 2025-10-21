@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Upload, LayoutDashboard, Settings, Video, PanelLeft } from 'lucide-react';
+import { Upload, LayoutDashboard, Settings, Video } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -14,7 +14,7 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { BsnConnectLogo } from '@/components/icons';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -30,8 +30,20 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab');
+
+  const isActive = (href: string) => {
+    if (href.includes('?tab=')) {
+      const [path, tabQuery] = href.split('?tab=');
+      return pathname === path && activeTab === tabQuery;
+    }
+    if (href === '/admin/upload' && activeTab) {
+        return false;
+    }
+    return pathname === href;
+  }
 
   return (
      <SidebarProvider>
@@ -46,7 +58,7 @@ export default function AdminLayout({
           <SidebarMenu>
             {navItems.map((item) => (
                <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton asChild isActive={pathname === item.href || (item.href.includes('?tab=') && pathname.includes('upload'))}>
+                <SidebarMenuButton asChild isActive={isActive(item.href)}>
                   <Link href={item.href}>
                     <item.icon />
                     <span>{item.label}</span>
