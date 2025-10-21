@@ -22,6 +22,11 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
   useEffect(() => {
     if (!waveformRef.current) return;
 
+    // Destroy existing instance if src changes
+    if (wavesurferRef.current) {
+      wavesurferRef.current.destroy();
+    }
+
     const wavesurfer = WaveSurfer.create({
       container: waveformRef.current,
       waveColor: 'hsl(var(--muted-foreground) / 0.5)',
@@ -34,7 +39,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
       url: src,
       barAlign: 'bottom',
       fetchParams: {
-        mode: 'cors'
+        mode: 'no-cors'
       }
     });
 
@@ -56,10 +61,11 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
     wavesurfer.on('pause', () => setIsPlaying(false));
 
 
+    // Return a cleanup function to destroy the instance on unmount
     return () => {
       wavesurfer.destroy();
     };
-  }, [src]);
+  }, [src]); // Re-run effect when src changes
 
   const handlePlayPause = useCallback(() => {
     wavesurferRef.current?.playPause();
@@ -68,9 +74,9 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
   const handleSeek = (direction: 'forward' | 'backward') => {
       if (!wavesurferRef.current) return;
       const amount = 5; // seek 5 seconds
-      const currentTime = wavesurferRef.current.getCurrentTime();
+      const currentTimeValue = wavesurferRef.current.getCurrentTime();
       const duration = wavesurferRef.current.getDuration();
-      const newTime = direction === 'forward' ? currentTime + amount : currentTime - amount;
+      const newTime = direction === 'forward' ? currentTimeValue + amount : currentTimeValue - amount;
       wavesurferRef.current.seekTo(newTime / duration);
   }
 
