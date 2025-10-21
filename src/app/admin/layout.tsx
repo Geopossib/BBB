@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/sidebar';
 import { BsnConnectLogo } from '@/components/icons';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { cn } from '@/lib/utils';
 
 const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -39,7 +38,7 @@ export default function AdminLayout({
       const [path, tabQuery] = href.split('?tab=');
       return pathname === path && activeTab === tabQuery;
     }
-    if (href === '/admin/upload' && activeTab) {
+    if (href === '/admin/upload' && activeTab && activeTab !== 'article' && activeTab !== 'video' && activeTab !== 'audio') {
         return false;
     }
     return pathname === href;
@@ -58,12 +57,12 @@ export default function AdminLayout({
           <SidebarMenu>
             {navItems.map((item) => (
                <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton asChild isActive={isActive(item.href)}>
                   <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
+                    <SidebarMenuButton isActive={isActive(item.href)}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
                   </Link>
-                </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
