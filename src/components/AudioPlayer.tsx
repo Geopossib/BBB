@@ -36,15 +36,14 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src }) => {
     audio.addEventListener('pause', () => setIsPlaying(false));
     audio.addEventListener('ended', () => setIsPlaying(false));
 
-
-    // Directly set src to start loading
-    audio.src = src;
-
     return () => {
       audio.removeEventListener('loadeddata', setAudioData);
       audio.removeEventListener('timeupdate', setAudioTime);
+      audio.removeEventListener('play', () => setIsPlaying(true));
+      audio.removeEventListener('pause', () => setIsPlaying(false));
+      audio.removeEventListener('ended', () => setIsPlaying(false));
     };
-  }, [src]);
+  }, []);
 
   const handlePlayPause = useCallback(() => {
     if (audioRef.current) {
@@ -53,7 +52,6 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src }) => {
         } else {
             audioRef.current.play();
         }
-        setIsPlaying(!isPlaying);
     }
   }, [isPlaying]);
 
@@ -89,11 +87,11 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src }) => {
       if(audioRef.current) {
           audioRef.current.muted = !isMuted;
           setIsMuted(!isMuted);
-          if (!isMuted) {
+          if (isMuted) { // if it was muted, now unmuted
+            audioRef.current.volume = volume > 0 ? volume : 0.5; // restore volume
+          } else { // if it was not muted, now muted
             setVolume(audioRef.current.volume); // store current volume
             audioRef.current.volume = 0;
-          } else {
-            audioRef.current.volume = volume; // restore volume
           }
       }
   }
@@ -108,8 +106,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src }) => {
 
   return (
     <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card">
-      {/* We need the audio element to be in the DOM for it to work */}
-      <audio ref={audioRef} preload="metadata" />
+      <audio ref={audioRef} src={src} preload="metadata" />
 
       <div className="flex items-center gap-4">
         <Button onClick={handlePlayPause} size="icon" className="w-12 h-12 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90">
