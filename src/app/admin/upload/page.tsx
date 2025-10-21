@@ -64,7 +64,7 @@ export default function UploadPage() {
 
   const audioForm = useForm<AudioFormValues>({
       resolver: zodResolver(audioSchema),
-      defaultValues: { title: "", description: "", duration: 0 },
+      defaultValues: { title: "", description: "", audioBlob: undefined, duration: 0 },
   });
 
   useEffect(() => {
@@ -172,6 +172,8 @@ export default function UploadPage() {
       } else {
          toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred." });
       }
+    } finally {
+        audioForm.reset();
     }
   };
 
@@ -359,3 +361,5 @@ export default function UploadPage() {
     </div>
   );
 }
+
+    
