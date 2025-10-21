@@ -1,30 +1,24 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getAudioFiles, AudioFile } from '@/lib/data';
+import { useState, useEffect, useMemo } from 'react';
+import { useCollection, useFirestore } from '@/firebase';
+import type { AudioFile } from '@/lib/data';
+import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AudioPlayer from '@/components/AudioPlayer';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AudioPage() {
-  const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const firestore = useFirestore();
+  const audiosQuery = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'audios');
+  }, [firestore]);
 
-  useEffect(() => {
-    async function loadAudio() {
-      try {
-        const fetchedAudio = await getAudioFiles();
-        setAudioFiles(fetchedAudio);
-      } catch (error) {
-        console.error("Error fetching audio files:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadAudio();
-  }, []);
+  const { data: audioFiles, isLoading } = useCollection<AudioFile>(audiosQuery);
+
 
   const LoadingSkeleton = () => (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -51,9 +45,9 @@ export default function AudioPage() {
           Daily devotionals, in-depth teachings, and guided prayers.
         </p>
       </div>
-      {loading ? <LoadingSkeleton /> : (
+      {isLoading ? <LoadingSkeleton /> : (
         <div className="max-w-4xl mx-auto space-y-6">
-          {audioFiles.map((audio) => (
+          {audioFiles && audioFiles.map((audio) => (
             <Card key={audio.id} className="overflow-hidden">
               <CardHeader>
                 <div className="flex justify-between items-start">
