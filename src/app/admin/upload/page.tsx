@@ -154,15 +154,13 @@ export default function UploadPage() {
       await addDoc(audiosCollection, audioData);
       
       toast({ title: "Success", description: "Audio uploaded successfully!" });
-      audioForm.reset();
 
     } catch (error: any) {
       console.error("Audio upload failed:", error);
       
-      if (error.code?.includes('storage')) {
-         toast({ variant: "destructive", title: "Storage Error", description: "Could not upload audio file. Check storage rules." });
+      if (error.code?.includes('storage/unauthorized')) {
+         toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
       } else if (error.name === 'FirebaseError') {
-          // This will be handled by the global error listener
           const permissionError = new FirestorePermissionError({
             path: 'audios', // This is a collection path, adjust if needed
             operation: 'create',
