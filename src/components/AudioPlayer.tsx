@@ -14,18 +14,22 @@ interface AudioPlayerProps {
 const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) => {
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [totalDuration, setTotalDuration] = useState(0);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!waveformRef.current) return;
-
-    // Destroy existing instance if src changes
-    if (wavesurferRef.current) {
-      wavesurferRef.current.destroy();
+    
+    // Create an audio element if it doesn't exist
+    if (!audioRef.current) {
+        audioRef.current = document.createElement('audio');
     }
+    audioRef.current.src = src;
+
 
     const wavesurfer = WaveSurfer.create({
       container: waveformRef.current,
@@ -36,55 +40,58 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
       barWidth: 3,
       barGap: 3,
       barRadius: 2,
-      url: src,
+      media: audioRef.current,
       barAlign: 'bottom',
     });
 
     wavesurferRef.current = wavesurfer;
 
-    wavesurfer.on('ready', (duration) => {
+    const onReady = (duration: number) => {
       setTotalDuration(duration);
-    });
+      setIsReady(true);
+    };
 
-    wavesurfer.on('audioprocess', (time) => {
-      setCurrentTime(time);
-    });
-
-    wavesurfer.on('finish', () => {
-      setIsPlaying(false);
-    });
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onFinish = () => setIsPlaying(false);
+    const onTimeUpdate = (time: number) => setCurrentTime(time);
     
-    wavesurfer.on('play', () => setIsPlaying(true));
-    wavesurfer.on('pause', () => setIsPlaying(false));
+    wavesurfer.on('ready', onReady);
+    wavesurfer.on('play', onPlay);
+    wavesurfer.on('pause', onPause);
+    wavesurfer.on('finish', onFinish);
+    wavesurfer.on('timeupdate', onTimeUpdate);
 
 
-    // Return a cleanup function to destroy the instance on unmount
     return () => {
+      wavesurfer.un('ready', onReady);
+      wavesurfer.un('play', onPlay);
+      wavesurfer.un('pause', onPause);
+      wavesurfer.un('finish', onFinish);
+      wavesurfer.un('timeupdate', onTimeUpdate);
       wavesurfer.destroy();
     };
-  }, [src]); // Re-run effect when src changes
+  }, [src]);
 
   const handlePlayPause = useCallback(() => {
-    wavesurferRef.current?.playPause();
+    if (wavesurferRef.current) {
+      wavesurferRef.current.playPause();
+    }
   }, []);
   
   const handleSeek = (direction: 'forward' | 'backward') => {
       if (!wavesurferRef.current) return;
       const amount = 5; // seek 5 seconds
-      const currentTimeValue = wavesurferRef.current.getCurrentTime();
-      const duration = wavesurferRef.current.getDuration();
-      const newTime = direction === 'forward' ? currentTimeValue + amount : currentTimeValue - amount;
-      wavesurferRef.current.seekTo(newTime / duration);
+      wavesurferRef.current.skip(direction === 'forward' ? amount : -amount);
   }
-
 
   const handleMute = () => {
     if(wavesurferRef.current) {
-        wavesurferRef.current.setMuted(!isMuted);
-        setIsMuted(!isMuted);
+        const newMutedState = !isMuted;
+        wavesurferRef.current.setMuted(newMutedState);
+        setIsMuted(newMutedState);
     }
   }
-
 
   const formatTime = (timeInSeconds: number) => {
     if (isNaN(timeInSeconds) || timeInSeconds < 0) return "0:00";
@@ -101,13 +108,13 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
             {formatTime(currentTime)}
         </span>
         <div className="flex items-center gap-2">
-            <Button onClick={() => handleSeek('backward')} size="icon" variant="ghost" className="hidden sm:inline-flex">
+            <Button onClick={() => handleSeek('backward')} size="icon" variant="ghost" className="hidden sm:inline-flex" disabled={!isReady}>
               <Rewind className="h-5 w-5" />
             </Button>
-            <Button onClick={handlePlayPause} size="icon" className="w-12 h-12 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90">
+            <Button onClick={handlePlayPause} size="icon" className="w-12 h-12 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90" disabled={!isReady}>
                 {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
             </Button>
-            <Button onClick={() => handleSeek('forward')} size="icon" variant="ghost" className="hidden sm:inline-flex">
+            <Button onClick={() => handleSeek('forward')} size="icon" variant="ghost" className="hidden sm:inline-flex" disabled={!isReady}>
               <FastForward className="h-5 w-5" />
             </Button>
         </div>
@@ -116,7 +123,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
         </span>
       </div>
        <div className="flex items-center justify-center gap-4 mt-2">
-         <Button onClick={handleMute} size="icon" variant="ghost">
+         <Button onClick={handleMute} size="icon" variant="ghost" disabled={!isReady}>
           {isMuted ? <VolumeX className="h-5 w-5 text-muted-foreground" /> : <Volume2 className="h-5 w-5 text-muted-foreground" />}
         </Button>
         <Button asChild variant="ghost" size="icon">
