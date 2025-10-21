@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ const audioSchema = z.object({
     title: z.string().min(1, "Title is required"),
     description: z.string().min(1, "Description is required"),
     audioBlob: z.instanceof(Blob, { message: "An audio recording or file is required." }),
+    duration: z.number().min(1, "Duration is required"),
 });
 
 
@@ -62,7 +64,7 @@ export default function UploadPage() {
 
   const audioForm = useForm<AudioFormValues>({
       resolver: zodResolver(audioSchema),
-      defaultValues: { title: "", description: "", audioBlob: undefined },
+      defaultValues: { title: "", description: ""},
   });
 
   useEffect(() => {
@@ -128,36 +130,61 @@ export default function UploadPage() {
       });
   };
 
-   const onAudioSubmit: SubmitHandler<AudioFormValues> = (data) => {
+  const onAudioSubmit: SubmitHandler<AudioFormValues> = async (data) => {
     if (!firestore) return;
+    audioForm.formState.isSubmitting = true;
 
-    // TODO: Upload audioBlob to Firebase Storage and get URL
-    const audioUrl = "https://storage.googleapis.com/studiopublic/Wave-sound-effect.mp3";
-    
-    const audiosCollection = collection(firestore, 'audios');
-    const audioData = {
+    try {
+      const storage = getStorage();
+      const fileName = `audio/${Date.now()}-${data.title.replace(/\s+/g, '-')}.webm`;
+      const storageRef = ref(storage, fileName);
+
+      await uploadBytes(storageRef, data.audioBlob, { contentType: 'audio/webm' });
+      const audioUrl = await getDownloadURL(storageRef);
+
+      const audiosCollection = collection(firestore, 'audios');
+      const audioData = {
         title: data.title,
         description: data.description,
         audioUrl: audioUrl,
-        category: "Devotional", // Temporary
-        duration: "3:14", // Temporary
+        category: "Devotional",
+        duration: `${Math.floor(data.duration / 60)}:${String(Math.floor(data.duration % 60)).padStart(2, '0')}`,
         createdAt: serverTimestamp(),
-    };
+      };
 
-    addDoc(audiosCollection, audioData)
-      .then(() => {
-        toast({ title: "Success", description: "Audio uploaded successfully!" });
-        audioForm.reset();
-      })
-      .catch(error => {
-        const permissionError = new FirestorePermissionError({
-          path: audiosCollection.path,
-          operation: 'create',
-          requestResourceData: audioData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+      await addDoc(audiosCollection, audioData);
+      
+      toast({ title: "Success", description: "Audio uploaded successfully!" });
+      audioForm.reset();
+
+    } catch (error: any) {
+      console.error("Audio upload failed:", error);
+      
+      if (error.code?.includes('storage')) {
+         toast({ variant: "destructive", title: "Storage Error", description: "Could not upload audio file. Check storage rules." });
+      } else if (error.name === 'FirebaseError') {
+          // This will be handled by the global error listener
+          const permissionError = new FirestorePermissionError({
+            path: 'audios', // This is a collection path, adjust if needed
+            operation: 'create',
+            requestResourceData: data,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      } else {
+         toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred." });
+      }
+    } finally {
+        audioForm.formState.isSubmitting = false;
+    }
   };
+
+  const formatDuration = (seconds: number) => {
+    if (!seconds || seconds === Infinity) return "0:00";
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+
 
   return (
     <div>
@@ -299,13 +326,26 @@ export default function UploadPage() {
                         <FormLabel>Audio</FormLabel>
                          <FormControl>
                             <AudioRecorder
-                                value={field.value}
-                                onChange={field.onChange}
-                                onReset={() => audioForm.reset()}
+                                onBlobChange={(blob, duration) => {
+                                  field.onChange(blob);
+                                  audioForm.setValue('duration', duration);
+                                }}
+                                onReset={() => {
+                                  field.onChange(null);
+                                  audioForm.setValue('duration', 0);
+                                  audioForm.resetField('audioBlob');
+                                }}
                              />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
+                   )} />
+                   <FormField control={audioForm.control} name="duration" render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormLabel>Duration</FormLabel>
+                        <FormControl><Input type="hidden" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
                    )} />
                   <Button type="submit" className="w-full md:w-auto" disabled={audioForm.formState.isSubmitting}>
                      {audioForm.formState.isSubmitting ? "Uploading..." : "Upload Audio"}
