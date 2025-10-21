@@ -32,8 +32,16 @@ const videoSchema = z.object({
   url: z.string().url("Please enter a valid YouTube URL"),
 });
 
+const audioSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    description: z.string().min(1, "Description is required"),
+    audioBlob: z.instanceof(Blob, { message: "An audio recording or file is required." }),
+});
+
+
 type ArticleFormValues = z.infer<typeof articleSchema>;
 type VideoFormValues = z.infer<typeof videoSchema>;
+type AudioFormValues = z.infer<typeof audioSchema>;
 
 export default function UploadPage() {
   const searchParams = useSearchParams();
@@ -50,6 +58,11 @@ export default function UploadPage() {
   const videoForm = useForm<VideoFormValues>({
     resolver: zodResolver(videoSchema),
      defaultValues: { title: "", description: "", url: "" },
+  });
+
+  const audioForm = useForm<AudioFormValues>({
+      resolver: zodResolver(audioSchema),
+      defaultValues: { title: "", description: "", audioBlob: undefined },
   });
 
   useEffect(() => {
@@ -110,6 +123,37 @@ export default function UploadPage() {
           path: videosCollection.path,
           operation: 'create',
           requestResourceData: videoData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+  };
+
+   const onAudioSubmit: SubmitHandler<AudioFormValues> = (data) => {
+    if (!firestore) return;
+
+    // TODO: Upload audioBlob to Firebase Storage and get URL
+    const audioUrl = "https://storage.googleapis.com/studiopublic/Wave-sound-effect.mp3";
+    
+    const audiosCollection = collection(firestore, 'audios');
+    const audioData = {
+        title: data.title,
+        description: data.description,
+        audioUrl: audioUrl,
+        category: "Devotional", // Temporary
+        duration: "3:14", // Temporary
+        createdAt: serverTimestamp(),
+    };
+
+    addDoc(audiosCollection, audioData)
+      .then(() => {
+        toast({ title: "Success", description: "Audio uploaded successfully!" });
+        audioForm.reset();
+      })
+      .catch(error => {
+        const permissionError = new FirestorePermissionError({
+          path: audiosCollection.path,
+          operation: 'create',
+          requestResourceData: audioData,
         });
         errorEmitter.emit('permission-error', permissionError);
       });
@@ -233,19 +277,41 @@ export default function UploadPage() {
               <CardTitle>Upload New Audio</CardTitle>
               <CardDescription>Record a new audio file or upload an existing one.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-               <div className="grid gap-2">
-                <Label htmlFor="audio-title">Title</Label>
-                <Input id="audio-title" placeholder="Daily Devotional" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="audio-description">Description</Label>
-                <Textarea id="audio-description" placeholder="A brief description of the audio file." />
-              </div>
-
-              <AudioRecorder />
-              
-              <Button className="w-full md:w-auto">Upload Audio</Button>
+            <CardContent>
+               <Form {...audioForm}>
+                <form onSubmit={audioForm.handleSubmit(onAudioSubmit)} className="space-y-4">
+                  <FormField control={audioForm.control} name="title" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl><Input placeholder="Daily Devotional" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={audioForm.control} name="description" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl><Textarea placeholder="A brief description of the audio file." {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField control={audioForm.control} name="audioBlob" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Audio</FormLabel>
+                         <FormControl>
+                            <AudioRecorder
+                                value={field.value}
+                                onChange={field.onChange}
+                                onReset={() => audioForm.reset()}
+                             />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                   )} />
+                  <Button type="submit" className="w-full md:w-auto" disabled={audioForm.formState.isSubmitting}>
+                     {audioForm.formState.isSubmitting ? "Uploading..." : "Upload Audio"}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>

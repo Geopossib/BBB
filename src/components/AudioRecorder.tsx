@@ -9,14 +9,18 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
-const AudioRecorder: FC = () => {
+interface AudioRecorderProps {
+    value?: Blob | null;
+    onChange?: (blob: Blob | null) => void;
+    onReset?: () => void;
+}
+
+const AudioRecorder: FC<AudioRecorderProps> = ({ value, onChange, onReset }) => {
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -24,6 +28,15 @@ const AudioRecorder: FC = () => {
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<NodeJS.Timeout>();
+
+   useEffect(() => {
+    if (value) {
+      const url = URL.createObjectURL(value);
+      setAudioUrl(url);
+    } else {
+      setAudioUrl(null);
+    }
+  }, [value]);
 
   useEffect(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -35,9 +48,7 @@ const AudioRecorder: FC = () => {
         };
         mediaRecorderRef.current.onstop = () => {
           const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          setAudioBlob(blob);
-          const url = URL.createObjectURL(blob);
-          setAudioUrl(url);
+          onChange?.(blob);
           audioChunksRef.current = [];
         };
       })
@@ -54,7 +65,7 @@ const AudioRecorder: FC = () => {
     return () => {
        if (timerRef.current) clearInterval(timerRef.current);
     }
-  }, [toast]);
+  }, [toast, onChange]);
   
   useEffect(() => {
     const audio = audioRef.current;
@@ -62,6 +73,7 @@ const AudioRecorder: FC = () => {
 
     const updateProgress = () => {
       setProgress((audio.currentTime / audio.duration) * 100);
+      setDuration(audio.duration);
     };
 
     const onEnded = () => setIsPlaying(false);
@@ -82,6 +94,7 @@ const AudioRecorder: FC = () => {
   const startRecording = () => {
     if (mediaRecorderRef.current && hasPermission) {
       setIsRecording(true);
+      setDuration(0);
       mediaRecorderRef.current.start();
        timerRef.current = setInterval(() => {
           setDuration(prev => prev + 1);
@@ -109,20 +122,18 @@ const AudioRecorder: FC = () => {
   }
 
   const resetRecording = () => {
-    setAudioBlob(null);
-    setAudioUrl(null);
+    onChange?.(null);
     setIsPlaying(false);
     setProgress(0);
     setDuration(0);
+    if(onReset) onReset();
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.type.startsWith('audio/')) {
-        const url = URL.createObjectURL(file);
-        setAudioBlob(file);
-        setAudioUrl(url);
+        onChange?.(file);
       } else {
         toast({
             variant: 'destructive',
@@ -134,6 +145,7 @@ const AudioRecorder: FC = () => {
   };
 
   const formatTime = (timeInSeconds: number) => {
+    if (isNaN(timeInSeconds) || timeInSeconds === Infinity) return "0:00";
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
@@ -180,7 +192,7 @@ const AudioRecorder: FC = () => {
         ) : (
             <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                    <Button onClick={togglePlay} size="icon" variant="outline">
+                    <Button onClick={togglePlay} size="icon" variant="outline" type="button">
                         {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                     </Button>
                     <div className="flex-grow space-y-1">
@@ -190,7 +202,7 @@ const AudioRecorder: FC = () => {
                 </div>
                 {audioUrl && <audio ref={audioRef} src={audioUrl} />}
                 <div className="flex gap-2">
-                    <Button onClick={resetRecording} variant="destructive" className="w-full">
+                    <Button onClick={resetRecording} variant="destructive" className="w-full" type="button">
                         <Trash2 className="mr-2 h-4 w-4" /> Delete and Re-record
                     </Button>
                 </div>
