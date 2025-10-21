@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { Search, Menu, Home, Film, Mic, BookOpen, Video } from 'lucide-react';
+import { Search, Menu, Home, Film, Mic, BookOpen, Video, ShieldCheck } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -78,6 +78,16 @@ export default function Header() {
                   {item.label}
                 </Link>
               ))}
+               <Link
+                href="/admin"
+                className={cn(
+                    'flex items-center gap-3 rounded-md p-2 text-muted-foreground transition-colors hover:text-primary',
+                    pathname.startsWith('/admin') && 'bg-muted text-primary font-semibold'
+                )}
+                >
+                <ShieldCheck className="h-5 w-5" />
+                Admin
+              </Link>
             </div>
           </SheetContent>
         </Sheet>
@@ -97,6 +107,9 @@ export default function Header() {
             </Button>
             <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
               <Link href="/signup">Sign Up</Link>
+            </Button>
+            <Button variant="outline" asChild className="hidden md:inline-flex">
+                <Link href="/admin">Admin</Link>
             </Button>
           </nav>
         </div>
