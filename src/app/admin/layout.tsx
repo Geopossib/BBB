@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/sidebar';
 import { BsnConnectLogo } from '@/components/icons';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
+import { useEffect } from 'react';
 
 const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,6 +34,16 @@ export default function AdminLayout({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab');
+
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    // If user is not logged in and not loading, sign them in anonymously
+    if (!user && !isUserLoading && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
 
   const isActive = (href: string) => {
     if (href.includes('?tab=')) {
