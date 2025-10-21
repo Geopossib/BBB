@@ -130,7 +130,7 @@ export default function UploadPage() {
             await uploadBytes(storageRef, data.videoFile);
             videoData.videoUrl = await getDownloadURL(storageRef);
         } else if (data.youtubeUrl) {
-            videoData.youtubeUrl = data.youtubeUrl;
+            videoData.videoUrl = data.youtubeUrl;
         }
         
         addDoc(videosCollection, videoData)
@@ -159,7 +159,7 @@ export default function UploadPage() {
 
   const onAudioSubmit: SubmitHandler<AudioFormValues> = async (data) => {
     if (!firestore) return;
-    
+
     try {
       const storage = getStorage();
       const fileName = `audio/${Date.now()}-${data.title.replace(/\s+/g, '-')}.webm`;
@@ -177,37 +177,30 @@ export default function UploadPage() {
         duration: `${Math.floor(data.duration / 60)}:${String(Math.floor(data.duration % 60)).padStart(2, '0')}`,
         createdAt: serverTimestamp(),
       };
-
-      await addDoc(audiosCollection, audioData);
       
-      toast({ title: "Success", description: "Audio uploaded successfully!" });
+      addDoc(audiosCollection, audioData)
+        .then(() => {
+            toast({ title: "Success", description: "Audio uploaded successfully!" });
+            audioForm.reset();
+        })
+        .catch(error => {
+            const permissionError = new FirestorePermissionError({
+              path: 'audios',
+              operation: 'create',
+              requestResourceData: audioData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
 
     } catch (error: any) {
       console.error("Audio upload failed:", error);
-      
       if (error.code?.includes('storage/unauthorized')) {
          toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
-      } else if (error.name === 'FirebaseError') {
-          const permissionError = new FirestorePermissionError({
-            path: 'audios', // This is a collection path, adjust if needed
-            operation: 'create',
-            requestResourceData: data,
-          });
-          errorEmitter.emit('permission-error', permissionError);
       } else {
          toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred." });
       }
-    } finally {
-        audioForm.reset();
     }
   };
-
-  const formatDuration = (seconds: number) => {
-    if (!seconds || seconds === Infinity) return "0:00";
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-  }
 
 
   return (
