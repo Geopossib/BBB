@@ -1,37 +1,74 @@
+'use client';
 import Link from 'next/link';
-import { Upload, LayoutDashboard, Settings, Video } from 'lucide-react';
+import { Upload, LayoutDashboard, Settings, Video, PanelLeft } from 'lucide-react';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarTrigger,
+  SidebarInset,
+} from '@/components/ui/sidebar';
+import { BsnConnectLogo } from '@/components/icons';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+
+const navItems = [
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/upload', label: 'Upload Content', icon: Upload },
+    { href: '/admin/upload?tab=live-meeting', label: 'Live Meetings', icon: Video },
+    { href: '#', label: 'Settings', icon: Settings },
+];
+
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  const pathname = usePathname();
+
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-secondary/80 border-r p-6">
-        <h2 className="text-2xl font-headline font-bold mb-8">Admin Panel</h2>
-        <nav className="flex flex-col space-y-2">
-          <Link href="/admin" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
-          </Link>
-          <Link href="/admin/upload" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-            <Upload className="h-4 w-4" />
-            Upload Content
-          </Link>
-           <Link href="/live-meetings" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-            <Video className="h-4 w-4" />
-            Live Meetings
-          </Link>
-          <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-            <Settings className="h-4 w-4" />
-            Settings
-          </Link>
-        </nav>
-      </aside>
-      <main className="flex-1 p-8 bg-background">
-        {children}
-      </main>
-    </div>
+     <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+           <div className="flex items-center gap-2">
+            <BsnConnectLogo className="size-7 text-primary" />
+            <span className="text-xl font-headline font-bold">Admin Panel</span>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            {navItems.map((item) => (
+               <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton asChild isActive={pathname === item.href || (item.href.includes('?tab=') && pathname.includes('upload'))}>
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter/>
+      </Sidebar>
+      <SidebarInset>
+         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-6">
+          <SidebarTrigger className="md:hidden" />
+          <div className="flex-1">
+            {/* You can add breadcrumbs or page titles here */}
+          </div>
+        </header>
+        <main className="flex-1 p-4 md:p-8 bg-background">
+            {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
