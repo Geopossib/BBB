@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Upload, LayoutDashboard, Settings } from 'lucide-react';
+import { Upload, LayoutDashboard, Settings, Video } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -15,9 +15,13 @@ export default function AdminLayout({
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
           </Link>
-          <Link href="/admin/upload" className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary">
+          <Link href="/admin/upload" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
             <Upload className="h-4 w-4" />
             Upload Content
+          </Link>
+           <Link href="/live-meetings" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+            <Video className="h-4 w-4" />
+            Live Meetings
           </Link>
           <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
             <Settings className="h-4 w-4" />

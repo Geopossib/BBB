@@ -185,88 +185,23 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/articles/{articleId}",
-        "definition": {
-          "entityName": "Article",
-          "schema": {
-            "$ref": "#/backend/entities/Article"
-          },
-          "description": "Stores articles uploaded by the admin. Requires admin role for create, update, and delete operations. Accessible by all users for reading.",
-          "params": [
-            {
-              "name": "articleId",
-              "description": "Unique identifier for the article."
-            }
-          ]
-        }
+    "collections": {
+      "articles": {
+        "$ref": "#/entities/Article",
+        "description": "Stores articles uploaded by the admin."
       },
-      {
-        "path": "/videos/{videoId}",
-        "definition": {
-          "entityName": "Video",
-          "schema": {
-            "$ref": "#/backend/entities/Video"
-          },
-          "description": "Stores videos uploaded by the admin. Requires admin role for create, update, and delete operations. Accessible by all users for reading.",
-          "params": [
-            {
-              "name": "videoId",
-              "description": "Unique identifier for the video."
-            }
-          ]
-        }
+      "videos": {
+        "$ref": "#/entities/Video",
+        "description": "Stores videos uploaded by the admin."
       },
-      {
-        "path": "/audios/{audioId}",
-        "definition": {
-          "entityName": "Audio",
-          "schema": {
-            "$ref": "#/backend/entities/Audio"
-          },
-          "description": "Stores audio files uploaded by the admin. Requires admin role for create, update, and delete operations. Accessible by all users for reading.",
-          "params": [
-            {
-              "name": "audioId",
-              "description": "Unique identifier for the audio."
-            }
-          ]
-        }
+      "audios": {
+        "$ref": "#/entities/Audio",
+        "description": "Stores audio files uploaded by the admin."
       },
-      {
-        "path": "/live_meetings/{liveMeetingId}",
-        "definition": {
-          "entityName": "LiveMeeting",
-          "schema": {
-            "$ref": "#/backend/entities/LiveMeeting"
-          },
-          "description": "Stores information about live meeting sessions. Requires admin role for create, update, and delete operations. Accessible by all users for reading.",
-          "params": [
-            {
-              "name": "liveMeetingId",
-              "description": "Unique identifier for the live meeting."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{adminId}",
-        "definition": {
-          "entityName": "roles_admin",
-          "schema": {
-            "$ref": "#/backend/entities/roles_admin"
-          },
-          "description": "Collection to store administrator UIDs. Existence of a document with the user's UID grants admin privileges.",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "The UID of the administrator."
-            }
-          ]
-        }
+      "liveMeetings": {
+        "$ref": "#/entities/LiveMeeting",
+        "description": "Stores information about live meeting sessions."
       }
-    ],
-    "reasoning": "The Firestore structure is designed to securely store and manage articles, videos, audios, and live meetings uploaded by admins. It prioritizes Authorization Independence, Clarity, and QAPs.  Since only admins will create content, we will use an `admin_uid` to check access.  A collection `roles_admin` will contain the admin user ID. This will allow rules to confirm write access.  Each top-level collection segregates the different content types, ensuring a homogeneous security posture (all documents in a collection share the same access needs).  \n\n**Authorization Independence:** There is no authorization dependency between any collections. The admin role is checked against the `roles_admin` collection for write access to the content collections. The `request.auth.uid` is checked against the documents within that collection to ensure the request comes from an authorized admin.\n\n**QAPs Support:** List operations are secure because each collection only contains content accessible to admins for creation.  Read access to the content is open to all users (website visitors)."
+    }
   }
 }
