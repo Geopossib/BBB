@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, FC } from 'react';
@@ -35,7 +36,17 @@ const AudioRecorder: FC<AudioRecorderProps> = ({ value, onChange, onReset }) => 
       setAudioUrl(url);
     } else {
       setAudioUrl(null);
+       if (audioRef.current) {
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
+      }
     }
+     // Cleanup URL object
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
   }, [value]);
 
   useEffect(() => {
@@ -72,12 +83,15 @@ const AudioRecorder: FC<AudioRecorderProps> = ({ value, onChange, onReset }) => 
     if (!audio) return;
 
     const updateProgress = () => {
-      setProgress((audio.currentTime / audio.duration) * 100);
-      setDuration(audio.duration);
+      if (audio.duration > 0) {
+         setProgress((audio.currentTime / audio.duration) * 100);
+      }
     };
 
     const onEnded = () => setIsPlaying(false);
-    const onLoadedMetadata = () => setDuration(audio.duration);
+    const onLoadedMetadata = () => {
+        setDuration(audio.duration);
+    };
 
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', onEnded);
@@ -154,12 +168,18 @@ const AudioRecorder: FC<AudioRecorderProps> = ({ value, onChange, onReset }) => 
 
   if (hasPermission === false) {
      return (
-        <Alert variant="destructive">
-          <AlertTitle>Microphone Access Required</AlertTitle>
-          <AlertDescription>
-            You have denied microphone access. Please enable it in your browser settings to record audio. You can still upload an audio file.
-          </AlertDescription>
-        </Alert>
+        <div className='space-y-4 rounded-lg border p-4'>
+            <Alert variant="destructive">
+            <AlertTitle>Microphone Access Required</AlertTitle>
+            <AlertDescription>
+                You have denied microphone access. Please enable it in your browser settings to record audio. You can still upload an audio file.
+            </AlertDescription>
+            </Alert>
+             <div className='grid w-full max-w-sm items-center gap-1.5'>
+                <Label htmlFor="audio-upload">Upload an Audio File</Label>
+                <Input id="audio-upload" type="file" accept="audio/*" onChange={handleFileUpload} />
+            </div>
+        </div>
       );
   }
 
