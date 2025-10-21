@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 const AudioRecorder: FC = () => {
   const { toast } = useToast();
