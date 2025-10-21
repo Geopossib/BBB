@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { BsnConnectLogo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { Search, Menu, Home, Film, Mic, BookOpen, Video, ShieldCheck } from 'lucide-react';
 
@@ -60,6 +60,9 @@ export default function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="pr-0">
+             <SheetHeader className="sr-only">
+              <SheetTitle>Menu</SheetTitle>
+            </SheetHeader>
             <Link href="/" className="mr-6 flex items-center space-x-2 mb-6">
               <BsnConnectLogo className="h-6 w-6" />
               <span className="font-bold font-headline">BSN Connect</span>
