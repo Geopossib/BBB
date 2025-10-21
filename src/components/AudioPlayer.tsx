@@ -11,7 +11,7 @@ interface AudioPlayerProps {
   duration: string; // The duration from the database can be used as a fallback.
 }
 
-const AudioPlayer: FC<AudioPlayerProps> = ({ src }) => {
+const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -23,34 +23,50 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src }) => {
     const audio = audioRef.current;
     if (!audio) return;
 
+    // When the src changes, update the audio element and load it.
+    if (audio.src !== src) {
+        audio.src = src;
+        audio.load();
+    }
+    
     const setAudioData = () => {
-      setDuration(audio.duration);
+      // Use the duration from the audio metadata if available, otherwise fallback to initial prop
+      setDuration(audio.duration && isFinite(audio.duration) ? audio.duration : 0);
       setCurrentTime(audio.currentTime);
     }
 
     const setAudioTime = () => setCurrentTime(audio.currentTime);
 
-    audio.addEventListener('loadeddata', setAudioData);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    audio.addEventListener('loadedmetadata', setAudioData);
     audio.addEventListener('timeupdate', setAudioTime);
-    audio.addEventListener('play', () => setIsPlaying(true));
-    audio.addEventListener('pause', () => setIsPlaying(false));
-    audio.addEventListener('ended', () => setIsPlaying(false));
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handlePause);
+
+    // Initial check in case the event was missed
+    if (audio.duration) {
+      setAudioData();
+    }
+
 
     return () => {
-      audio.removeEventListener('loadeddata', setAudioData);
+      audio.removeEventListener('loadedmetadata', setAudioData);
       audio.removeEventListener('timeupdate', setAudioTime);
-      audio.removeEventListener('play', () => setIsPlaying(true));
-      audio.removeEventListener('pause', () => setIsPlaying(false));
-      audio.removeEventListener('ended', () => setIsPlaying(false));
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handlePause);
     };
-  }, []);
+  }, [src]); // This effect now correctly depends on `src`
 
   const handlePlayPause = useCallback(() => {
     if (audioRef.current) {
         if (isPlaying) {
             audioRef.current.pause();
         } else {
-            audioRef.current.play();
+            audioRef.current.play().catch(e => console.error("Error playing audio:", e));
         }
     }
   }, [isPlaying]);
@@ -85,13 +101,13 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src }) => {
 
   const toggleMute = () => {
       if(audioRef.current) {
-          audioRef.current.muted = !isMuted;
-          setIsMuted(!isMuted);
-          if (isMuted) { // if it was muted, now unmuted
-            audioRef.current.volume = volume > 0 ? volume : 0.5; // restore volume
-          } else { // if it was not muted, now muted
-            setVolume(audioRef.current.volume); // store current volume
-            audioRef.current.volume = 0;
+          const currentlyMuted = audioRef.current.muted;
+          audioRef.current.muted = !currentlyMuted;
+          setIsMuted(!currentlyMuted);
+          // If unmuting, restore volume to a listenable level if it was 0
+          if (currentlyMuted && volume === 0) {
+              setVolume(0.5);
+              audioRef.current.volume = 0.5;
           }
       }
   }
@@ -106,7 +122,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src }) => {
 
   return (
     <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card">
-      <audio ref={audioRef} src={src} preload="metadata" />
+      <audio ref={audioRef} preload="metadata" />
 
       <div className="flex items-center gap-4">
         <Button onClick={handlePlayPause} size="icon" className="w-12 h-12 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90">
