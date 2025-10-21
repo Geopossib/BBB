@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import AudioRecorder from '@/components/AudioRecorder';
 import LiveMeetingForm from './LiveMeetingForm';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 const articleSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -57,43 +58,61 @@ export default function UploadPage() {
     }
   }, [tab]);
   
-  const onArticleSubmit: SubmitHandler<ArticleFormValues> = async (data) => {
+  const onArticleSubmit: SubmitHandler<ArticleFormValues> = (data) => {
     if (!firestore) return;
-    try {
-      await addDoc(collection(firestore, 'articles'), {
-        ...data,
-        slug: data.title.toLowerCase().replace(/\s+/g, '-'),
-        imageId: `article-image-${Math.floor(Math.random() * 4) + 1}`, // Temporary
-        excerpt: data.content.substring(0, 150),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+
+    const articlesCollection = collection(firestore, 'articles');
+    const articleData = {
+      ...data,
+      slug: data.title.toLowerCase().replace(/\s+/g, '-'),
+      imageId: `article-image-${Math.floor(Math.random() * 4) + 1}`, // Temporary
+      excerpt: data.content.substring(0, 150),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    addDoc(articlesCollection, articleData)
+      .then(() => {
+        toast({ title: "Success", description: "Article uploaded successfully!" });
+        articleForm.reset();
+      })
+      .catch(error => {
+        const permissionError = new FirestorePermissionError({
+          path: articlesCollection.path,
+          operation: 'create',
+          requestResourceData: articleData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
-      toast({ title: "Success", description: "Article uploaded successfully!" });
-      articleForm.reset();
-    } catch (error) {
-      console.error("Error uploading article:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to upload article." });
-    }
   };
 
-  const onVideoSubmit: SubmitHandler<VideoFormValues> = async (data) => {
-     if (!firestore) return;
-    try {
-       await addDoc(collection(firestore, 'videos'), {
-        title: data.title,
-        description: data.description,
-        youtubeUrl: data.url,
-        thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`, // Temporary
-        category: 'General', // Temporary
-        duration: '00:00', // Temporary
-        createdAt: serverTimestamp(),
+  const onVideoSubmit: SubmitHandler<VideoFormValues> = (data) => {
+    if (!firestore) return;
+    
+    const videosCollection = collection(firestore, 'videos');
+    const videoData = {
+      title: data.title,
+      description: data.description,
+      youtubeUrl: data.url,
+      thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`, // Temporary
+      category: 'General', // Temporary
+      duration: '00:00', // Temporary
+      createdAt: serverTimestamp(),
+    };
+    
+    addDoc(videosCollection, videoData)
+      .then(() => {
+        toast({ title: "Success", description: "Video added successfully!" });
+        videoForm.reset();
+      })
+      .catch(error => {
+        const permissionError = new FirestorePermissionError({
+          path: videosCollection.path,
+          operation: 'create',
+          requestResourceData: videoData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
-      toast({ title: "Success", description: "Video added successfully!" });
-      videoForm.reset();
-    } catch (error) {
-      console.error("Error adding video:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to add video." });
-    }
   };
 
   return (
