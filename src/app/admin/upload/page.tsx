@@ -157,7 +157,7 @@ export default function UploadPage() {
                   )} />
                   <div className="grid gap-2">
                     <Label htmlFor="article-image">Cover Image</Label>
-                    <Input id="article-image" type="file" disabled />
+                    <Input id="article-image" type="file" />
                   </div>
                   <FormField control={articleForm.control} name="content" render={({ field }) => (
                     <FormItem>
