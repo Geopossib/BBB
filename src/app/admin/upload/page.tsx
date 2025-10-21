@@ -112,17 +112,6 @@ export default function UploadPage() {
     if (!firestore) return;
     
     try {
-        let videoUrl: string | undefined = data.youtubeUrl;
-        
-        if (data.videoFile) {
-            const storage = getStorage();
-            const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
-            const storageRef = ref(storage, fileName);
-
-            await uploadBytes(storageRef, data.videoFile);
-            videoUrl = await getDownloadURL(storageRef);
-        }
-
         const videosCollection = collection(firestore, 'videos');
         const videoData: { [key: string]: any } = {
           title: data.title,
@@ -133,29 +122,37 @@ export default function UploadPage() {
           createdAt: serverTimestamp(),
         };
 
-        if (activeVideoTab === 'youtube') {
+        if (data.videoFile) {
+            const storage = getStorage();
+            const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
+            const storageRef = ref(storage, fileName);
+
+            await uploadBytes(storageRef, data.videoFile);
+            videoData.videoUrl = await getDownloadURL(storageRef);
+        } else if (data.youtubeUrl) {
             videoData.youtubeUrl = data.youtubeUrl;
-        } else {
-            videoData.videoUrl = videoUrl;
         }
         
-        await addDoc(videosCollection, videoData);
-        toast({ title: "Success", description: "Video added successfully!" });
-        videoForm.reset();
+        addDoc(videosCollection, videoData)
+          .then(() => {
+              toast({ title: "Success", description: "Video added successfully!" });
+              videoForm.reset();
+          })
+          .catch(error => {
+              const permissionError = new FirestorePermissionError({
+                  path: 'videos',
+                  operation: 'create',
+                  requestResourceData: videoData,
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          });
         
     } catch (error: any) {
         console.error("Video upload failed:", error);
         if (error.code?.includes('storage/unauthorized')) {
             toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
-        } else if (error.name === 'FirebaseError') {
-            const permissionError = new FirestorePermissionError({
-                path: 'videos',
-                operation: 'create',
-                requestResourceData: data,
-            });
-            errorEmitter.emit('permission-error', permissionError);
         } else {
-            toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred." });
+            toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred during video upload." });
         }
     }
   };
