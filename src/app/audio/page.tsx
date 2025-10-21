@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useCollection, useFirestore } from '@/firebase';
+import { useMemo } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { AudioFile } from '@/lib/data';
 import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AudioPage() {
   const firestore = useFirestore();
-  const audiosQuery = useMemo(() => {
+  const audiosQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'audios');
   }, [firestore]);
