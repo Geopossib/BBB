@@ -1,0 +1,272 @@
+{
+  "entities": {
+    "Article": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Article",
+      "type": "object",
+      "description": "Represents a blog article with associated content.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the article."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the article."
+        },
+        "content": {
+          "type": "string",
+          "description": "The main text content of the article, formatted as HTML or plain text."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the associated image for the article."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the article was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the article was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "imageUrl",
+        "createdAt"
+      ]
+    },
+    "Video": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Video",
+      "type": "object",
+      "description": "Represents a video uploaded by the admin.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the video."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the video."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the video content."
+        },
+        "videoUrl": {
+          "type": "string",
+          "description": "URL of the video file or YouTube link."
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "URL of the video thumbnail image."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the video was uploaded.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the video was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "videoUrl",
+        "thumbnailUrl",
+        "createdAt"
+      ]
+    },
+    "Audio": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Audio",
+      "type": "object",
+      "description": "Represents an audio file uploaded by the admin.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the audio."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the audio."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the audio content."
+        },
+        "audioUrl": {
+          "type": "string",
+          "description": "URL of the audio file."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the audio was uploaded.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the audio was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "audioUrl",
+        "createdAt"
+      ]
+    },
+    "LiveMeeting": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LiveMeeting",
+      "type": "object",
+      "description": "Represents a live meeting session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the live meeting."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the live meeting."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the live meeting."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Timestamp indicating the start time of the live meeting.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "Timestamp indicating the end time of the live meeting.",
+          "format": "date-time"
+        },
+        "meetingUrl": {
+          "type": "string",
+          "description": "URL for accessing the live meeting (e.g., Zoom, Google Meet link)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the live meeting was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the live meeting was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "startTime",
+        "endTime",
+        "meetingUrl"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/articles/{articleId}",
+        "definition": {
+          "entityName": "Article",
+          "schema": {
+            "$ref": "#/backend/entities/Article"
+          },
+          "description": "Stores articles uploaded by the admin. Requires admin role for create, update, and delete operations. Accessible by all users for reading.",
+          "params": [
+            {
+              "name": "articleId",
+              "description": "Unique identifier for the article."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/videos/{videoId}",
+        "definition": {
+          "entityName": "Video",
+          "schema": {
+            "$ref": "#/backend/entities/Video"
+          },
+          "description": "Stores videos uploaded by the admin. Requires admin role for create, update, and delete operations. Accessible by all users for reading.",
+          "params": [
+            {
+              "name": "videoId",
+              "description": "Unique identifier for the video."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/audios/{audioId}",
+        "definition": {
+          "entityName": "Audio",
+          "schema": {
+            "$ref": "#/backend/entities/Audio"
+          },
+          "description": "Stores audio files uploaded by the admin. Requires admin role for create, update, and delete operations. Accessible by all users for reading.",
+          "params": [
+            {
+              "name": "audioId",
+              "description": "Unique identifier for the audio."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/live_meetings/{liveMeetingId}",
+        "definition": {
+          "entityName": "LiveMeeting",
+          "schema": {
+            "$ref": "#/backend/entities/LiveMeeting"
+          },
+          "description": "Stores information about live meeting sessions. Requires admin role for create, update, and delete operations. Accessible by all users for reading.",
+          "params": [
+            {
+              "name": "liveMeetingId",
+              "description": "Unique identifier for the live meeting."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminId}",
+        "definition": {
+          "entityName": "roles_admin",
+          "schema": {
+            "$ref": "#/backend/entities/roles_admin"
+          },
+          "description": "Collection to store administrator UIDs. Existence of a document with the user's UID grants admin privileges.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The UID of the administrator."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to securely store and manage articles, videos, audios, and live meetings uploaded by admins. It prioritizes Authorization Independence, Clarity, and QAPs.  Since only admins will create content, we will use an `admin_uid` to check access.  A collection `roles_admin` will contain the admin user ID. This will allow rules to confirm write access.  Each top-level collection segregates the different content types, ensuring a homogeneous security posture (all documents in a collection share the same access needs).  \n\n**Authorization Independence:** There is no authorization dependency between any collections. The admin role is checked against the `roles_admin` collection for write access to the content collections. The `request.auth.uid` is checked against the documents within that collection to ensure the request comes from an authorized admin.\n\n**QAPs Support:** List operations are secure because each collection only contains content accessible to admins for creation.  Read access to the content is open to all users (website visitors)."
+  }
+}
