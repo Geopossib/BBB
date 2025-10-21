@@ -67,19 +67,36 @@ export default function VideoPage({ params }: VideoPageProps) {
     return null; // Or some other not found component
   }
 
+  const renderVideoPlayer = () => {
+    if (video.videoUrl) {
+      return (
+         <video controls className="w-full h-full rounded-lg shadow-xl" preload="metadata">
+            <source src={video.videoUrl} type="video/mp4" />
+            Your browser does not support the video tag.
+        </video>
+      )
+    }
+    if (video.youtubeUrl) {
+       return (
+        <iframe
+            src={video.youtubeUrl}
+            title={video.title}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full rounded-lg shadow-xl"
+        ></iframe>
+       )
+    }
+    return <div className="w-full h-full rounded-lg shadow-xl bg-muted flex items-center justify-center"><p>Video source not available.</p></div>
+  }
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="lg:w-2/3 w-full">
           <div className="aspect-video w-full mb-4">
-            <iframe
-              src={video.youtubeUrl}
-              title={video.title}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full rounded-lg shadow-xl"
-            ></iframe>
+            {renderVideoPlayer()}
           </div>
           <div className="bg-card border rounded-lg p-6">
              <div className="flex flex-wrap items-center gap-4 mb-4">

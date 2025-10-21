@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -30,7 +31,11 @@ const articleSchema = z.object({
 const videoSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
-  url: z.string().url("Please enter a valid YouTube URL"),
+  youtubeUrl: z.string().url("Please enter a valid YouTube URL").optional().or(z.literal('')),
+  videoFile: z.instanceof(File).optional(),
+}).refine(data => data.youtubeUrl || data.videoFile, {
+    message: "Either a YouTube URL or a video file is required.",
+    path: ["youtubeUrl"], // you can use any field path here
 });
 
 const audioSchema = z.object({
@@ -49,6 +54,8 @@ export default function UploadPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tab || "article");
+  const [activeVideoTab, setActiveVideoTab] = useState("youtube");
+
   const { toast } = useToast();
   const firestore = useFirestore();
 
@@ -59,7 +66,7 @@ export default function UploadPage() {
 
   const videoForm = useForm<VideoFormValues>({
     resolver: zodResolver(videoSchema),
-     defaultValues: { title: "", description: "", url: "" },
+     defaultValues: { title: "", description: "", youtubeUrl: "" },
   });
 
   const audioForm = useForm<AudioFormValues>({
@@ -101,33 +108,56 @@ export default function UploadPage() {
       });
   };
 
-  const onVideoSubmit: SubmitHandler<VideoFormValues> = (data) => {
+  const onVideoSubmit: SubmitHandler<VideoFormValues> = async (data) => {
     if (!firestore) return;
     
-    const videosCollection = collection(firestore, 'videos');
-    const videoData = {
-      title: data.title,
-      description: data.description,
-      youtubeUrl: data.url,
-      thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`, // Temporary
-      category: 'General', // Temporary
-      duration: '00:00', // Temporary
-      createdAt: serverTimestamp(),
-    };
-    
-    addDoc(videosCollection, videoData)
-      .then(() => {
+    try {
+        let videoUrl: string | undefined = data.youtubeUrl;
+        
+        if (data.videoFile) {
+            const storage = getStorage();
+            const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
+            const storageRef = ref(storage, fileName);
+
+            await uploadBytes(storageRef, data.videoFile);
+            videoUrl = await getDownloadURL(storageRef);
+        }
+
+        const videosCollection = collection(firestore, 'videos');
+        const videoData: { [key: string]: any } = {
+          title: data.title,
+          description: data.description,
+          thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`, // Temporary
+          category: 'General', // Temporary
+          duration: '00:00', // Temporary
+          createdAt: serverTimestamp(),
+        };
+
+        if (activeVideoTab === 'youtube') {
+            videoData.youtubeUrl = data.youtubeUrl;
+        } else {
+            videoData.videoUrl = videoUrl;
+        }
+        
+        await addDoc(videosCollection, videoData);
         toast({ title: "Success", description: "Video added successfully!" });
         videoForm.reset();
-      })
-      .catch(error => {
-        const permissionError = new FirestorePermissionError({
-          path: videosCollection.path,
-          operation: 'create',
-          requestResourceData: videoData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+        
+    } catch (error: any) {
+        console.error("Video upload failed:", error);
+        if (error.code?.includes('storage/unauthorized')) {
+            toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
+        } else if (error.name === 'FirebaseError') {
+            const permissionError = new FirestorePermissionError({
+                path: 'videos',
+                operation: 'create',
+                requestResourceData: data,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred." });
+        }
+    }
   };
 
   const onAudioSubmit: SubmitHandler<AudioFormValues> = async (data) => {
@@ -266,13 +296,13 @@ export default function UploadPage() {
                       </FormItem>
                     )} />
                   
-                  <Tabs defaultValue="youtube" className="w-full">
+                  <Tabs value={activeVideoTab} onValueChange={setActiveVideoTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="youtube">YouTube</TabsTrigger>
-                      <TabsTrigger value="upload" disabled>Upload</TabsTrigger>
+                      <TabsTrigger value="upload">Upload</TabsTrigger>
                     </TabsList>
                     <TabsContent value="youtube" className="pt-4">
-                      <FormField control={videoForm.control} name="url" render={({ field }) => (
+                      <FormField control={videoForm.control} name="youtubeUrl" render={({ field }) => (
                         <FormItem>
                           <FormLabel>YouTube URL</FormLabel>
                           <FormControl><Input placeholder="https://www.youtube.com/watch?v=..." {...field} /></FormControl>
@@ -281,10 +311,20 @@ export default function UploadPage() {
                       )} />
                     </TabsContent>
                     <TabsContent value="upload" className="pt-4">
-                       <div className="grid gap-2">
-                        <Label htmlFor="video-file">Video File</Label>
-                        <Input id="video-file" type="file" accept="video/*" disabled />
-                      </div>
+                       <FormField control={videoForm.control} name="videoFile" render={({ field: { onChange, value, ...rest } }) => (
+                        <FormItem>
+                          <FormLabel>Video File</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="file" 
+                              accept="video/*" 
+                              onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
+                              {...rest}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </TabsContent>
                   </Tabs>
                   <Button type="submit" className="w-full md:w-auto" disabled={videoForm.formState.isSubmitting}>
@@ -340,7 +380,7 @@ export default function UploadPage() {
                    <FormField control={audioForm.control} name="duration" render={({ field }) => (
                       <FormItem className="hidden">
                         <FormLabel>Duration</FormLabel>
-                        <FormControl><Input type="hidden" {...field} /></FormControl>
+                        <FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl>
                         <FormMessage />
                       </FormItem>
                    )} />
@@ -359,5 +399,3 @@ export default function UploadPage() {
     </div>
   );
 }
-
-    

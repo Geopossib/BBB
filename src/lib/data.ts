@@ -32,7 +32,8 @@ export type Video = {
   id: string;
   title: string;
   description: string;
-  youtubeUrl: string;
+  videoUrl?: string; // For direct uploads
+  youtubeUrl?: string; // For youtube links
   thumbnailId: string;
   category: string;
   duration: string;
