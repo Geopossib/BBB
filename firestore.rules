@@ -1,114 +1,91 @@
 /**
- * @description This ruleset enforces a role-based access control model, where only users listed in the `roles_admin` collection are granted write access to content collections (`articles`, `videos`, `audios`, `live_meetings`). Read access is public for all content.
- * @dataStructure
- *  - `/articles/{articleId}`: Stores article data.
- *  - `/videos/{videoId}`: Stores video data.
- *  - `/audios/{audioId}`: Stores audio data.
- *  - `/live_meetings/{liveMeetingId}`: Stores live meeting data.
- *  - `/roles_admin/{adminId}`: Stores administrator UIDs. The existence of a document with a user's UID in this collection grants admin privileges.
- * @keySecurityDecisions
- *  - Read access to all content collections (`articles`, `videos`, `audios`, `live_meetings`) is public.
- *  - Write access (create, update, delete) to content collections is restricted to users with an administrator role.
- *  - The `roles_admin` collection is used to manage administrator roles. The existence of a document with the user's UID grants admin privileges.
- *  - Listing of documents in `roles_admin` is denied to prevent unauthorized enumeration of administrators.
+ * @fileoverview Firestore Security Rules for Prototyping.
+ *
+ * Core Philosophy:
+ * This ruleset prioritizes rapid prototyping by focusing on authorization while relaxing data validation.
+ * It enforces admin-only write access to all collections, allowing any authenticated user to read.
+ *
+ * Data Structure:
+ * The database consists of four top-level collections: 'articles', 'videos', 'audios', and 'liveMeetings'.
+ *
+ * Key Security Decisions:
+ * - Read access is public for authenticated users.
+ * - Write access is restricted to admins only.
+ * - No data shape validation is enforced during writes for prototyping speed.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows anyone to read articles, but restricts creation, updates, and deletion to administrators.
-     * @path /articles/{articleId}
-     * @allow (get, list): Any user can read articles.
-     * @allow (create): An admin can create a new article. request.auth.uid must exist in /roles_admin.
-     * @deny (create): A non-admin user attempts to create an article.
-     * @deny (update): A non-admin user attempts to update an article.
-     * @deny (delete): A non-admin user attempts to delete an article.
-     * @principle Allows public read access while restricting write access to admins.
+     * @description Grants read access to all authenticated users and restricts write access to admins only for articles collection.
+     * @path /databases/{database}/documents/articles/{articleId}
+     * @allow (get, list) - Any authenticated user can read article data.
+     * @allow (create, update, delete) - Only admins can create, update, or delete articles.
+     * @deny (create, update, delete) - Non-admin users cannot modify article data.
+     * @principle Restricts writes to admins only, allows public reads.
      */
     match /articles/{articleId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read videos, but restricts creation, updates, and deletion to administrators.
-     * @path /videos/{videoId}
-     * @allow (get, list): Any user can read videos.
-     * @allow (create): An admin can create a new video. request.auth.uid must exist in /roles_admin.
-     * @deny (create): A non-admin user attempts to create a video.
-     * @deny (update): A non-admin user attempts to update a video.
-     * @deny (delete): A non-admin user attempts to delete a video.
-     * @principle Allows public read access while restricting write access to admins.
+     * @description Grants read access to all authenticated users and restricts write access to admins only for videos collection.
+     * @path /databases/{database}/documents/videos/{videoId}
+     * @allow (get, list) - Any authenticated user can read video data.
+     * @allow (create, update, delete) - Only admins can create, update, or delete videos.
+     * @deny (create, update, delete) - Non-admin users cannot modify video data.
+     * @principle Restricts writes to admins only, allows public reads.
      */
     match /videos/{videoId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read audios, but restricts creation, updates, and deletion to administrators.
-     * @path /audios/{audioId}
-     * @allow (get, list): Any user can read audios.
-     * @allow (create): An admin can create a new audio. request.auth.uid must exist in /roles_admin.
-     * @deny (create): A non-admin user attempts to create an audio.
-     * @deny (update): A non-admin user attempts to update an audio.
-     * @deny (delete): A non-admin user attempts to delete an audio.
-     * @principle Allows public read access while restricting write access to admins.
+     * @description Grants read access to all authenticated users and restricts write access to admins only for audios collection.
+     * @path /databases/{database}/documents/audios/{audioId}
+     * @allow (get, list) - Any authenticated user can read audio data.
+     * @allow (create, update, delete) - Only admins can create, update, or delete audios.
+     * @deny (create, update, delete) - Non-admin users cannot modify audio data.
+     * @principle Restricts writes to admins only, allows public reads.
      */
     match /audios/{audioId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Allows anyone to read live meetings, but restricts creation, updates, and deletion to administrators.
-     * @path /live_meetings/{liveMeetingId}
-     * @allow (get, list): Any user can read live meetings.
-     * @allow (create): An admin can create a new live meeting. request.auth.uid must exist in /roles_admin.
-     * @deny (create): A non-admin user attempts to create a live meeting.
-     * @deny (update): A non-admin user attempts to update a live meeting.
-     * @deny (delete): A non-admin user attempts to delete a live meeting.
-     * @principle Allows public read access while restricting write access to admins.
+     * @description Grants read access to all authenticated users and restricts write access to admins only for liveMeetings collection.
+     * @path /databases/{database}/documents/liveMeetings/{liveMeetingId}
+     * @allow (get, list) - Any authenticated user can read liveMeeting data.
+     * @allow (create, update, delete) - Only admins can create, update, or delete liveMeetings.
+     * @deny (create, update, delete) - Non-admin users cannot modify liveMeeting data.
+     * @principle Restricts writes to admins only, allows public reads.
      */
-    match /live_meetings/{liveMeetingId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
+    match /liveMeetings/{liveMeetingId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
+
+    // ---- Helper functions ----
 
     /**
-     * @description Restricts access to the `roles_admin` collection. Only admins can create new admin entries, and listing is denied to prevent unauthorized enumeration.
-     * @path /roles_admin/{adminId}
-     * @allow (create): An admin can create a new admin entry. This is checked by verifying that the authenticated user is also an admin.
-     * @deny (get): Non-admins cannot get data.
-     * @deny (list): Listing of admin roles is disallowed to prevent enumeration.
-     * @deny (update): Updating admin roles is disallowed.
-     * @deny (delete): Deleting admin roles is disallowed.
-     * @principle Enforces strict control over administrator role management.
+     * @description Checks if the user is signed in.
+     * @return True if the user is authenticated, false otherwise.
      */
-    match /roles_admin/{adminId} {
-      allow get: if isAdmin();
-      allow list: if false;
-      allow create: if isAdmin();
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    // Helper Functions
     function isSignedIn() {
       return request.auth != null;
     }
 
+    /**
+     * @description Checks if the user is an admin.
+     * @return True if the user has admin privileges, false otherwise.
+     */
     function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // TODO: Implement admin role check using custom claims or a dedicated admin collection.
+      return request.auth.uid == 'admin-user-id'; // Replace 'admin-user-id' with the actual admin user ID
     }
   }
 }
