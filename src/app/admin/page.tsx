@@ -1,10 +1,11 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getArticles, getVideos, getAudioFiles } from "@/lib/data";
 
-export default function AdminDashboardPage() {
-    const totalArticles = getArticles().length;
-    const totalVideos = getVideos().length;
-    const totalAudio = getAudioFiles().length;
+export default async function AdminDashboardPage() {
+    const totalArticles = (await getArticles()).length;
+    const totalVideos = (await getVideos()).length;
+    const totalAudio = (await getAudioFiles()).length;
 
     return (
         <div>

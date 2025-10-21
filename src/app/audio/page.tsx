@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import AudioPlayer from '@/components/AudioPlayer';
 import { Badge } from '@/components/ui/badge';
 
-export default function AudioPage() {
-  const audioFiles = getAudioFiles();
+export default async function AudioPage() {
+  const audioFiles = await getAudioFiles();
 
   return (
     <div className="container mx-auto px-4 py-16">

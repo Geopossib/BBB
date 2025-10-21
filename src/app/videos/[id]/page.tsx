@@ -10,14 +10,14 @@ type VideoPageProps = {
 };
 
 export async function generateStaticParams() {
-  const videos = getVideos();
+  const videos = await getVideos();
   return videos.map((video) => ({
     id: video.id,
   }));
 }
 
-export default function VideoPage({ params }: VideoPageProps) {
-  const video = getVideoById(params.id);
+export default async function VideoPage({ params }: VideoPageProps) {
+  const video = await getVideoById(params.id);
 
   if (!video) {
     notFound();

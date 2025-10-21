@@ -13,14 +13,14 @@ type ArticlePageProps = {
 
 // Generate static paths for all articles
 export async function generateStaticParams() {
-  const articles = getArticles();
+  const articles = await getArticles();
   return articles.map((article) => ({
     slug: article.slug,
   }));
 }
 
-export default function ArticlePage({ params }: ArticlePageProps) {
-  const article = getArticleBySlug(params.slug);
+export default async function ArticlePage({ params }: ArticlePageProps) {
+  const article = await getArticleBySlug(params.slug);
 
   if (!article) {
     notFound();

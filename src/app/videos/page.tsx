@@ -5,8 +5,8 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayCircle, Clock } from 'lucide-react';
 
-export default function VideosPage() {
-  const videos = getVideos();
+export default async function VideosPage() {
+  const videos = await getVideos();
 
   const getImage = (id: string) => {
     return PlaceHolderImages.find((img) => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/400/225';

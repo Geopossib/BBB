@@ -5,8 +5,8 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, User } from 'lucide-react';
 
-export default function BlogPage() {
-  const articles = getArticles();
+export default async function BlogPage() {
+  const articles = await getArticles();
 
   const getImage = (id: string) => {
     return PlaceHolderImages.find((img) => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/800/600';

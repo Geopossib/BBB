@@ -1,25 +1,100 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useFirestore } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import AudioRecorder from '@/components/AudioRecorder';
 import LiveMeetingForm from './LiveMeetingForm';
+
+const articleSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  author: z.string().min(1, "Author is required"),
+  category: z.string().min(1, "Category is required"),
+  content: z.string().min(10, "Content must be at least 10 characters"),
+  // image will be handled separately
+});
+
+const videoSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  url: z.string().url("Please enter a valid YouTube URL"),
+});
+
+type ArticleFormValues = z.infer<typeof articleSchema>;
+type VideoFormValues = z.infer<typeof videoSchema>;
 
 export default function UploadPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tab || "article");
+  const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const articleForm = useForm<ArticleFormValues>({
+    resolver: zodResolver(articleSchema),
+    defaultValues: { title: "", author: "", category: "", content: "" },
+  });
+
+  const videoForm = useForm<VideoFormValues>({
+    resolver: zodResolver(videoSchema),
+     defaultValues: { title: "", description: "", url: "" },
+  });
 
   useEffect(() => {
     if (tab) {
       setActiveTab(tab);
     }
   }, [tab]);
+  
+  const onArticleSubmit: SubmitHandler<ArticleFormValues> = async (data) => {
+    if (!firestore) return;
+    try {
+      await addDoc(collection(firestore, 'articles'), {
+        ...data,
+        slug: data.title.toLowerCase().replace(/\s+/g, '-'),
+        imageId: `article-image-${Math.floor(Math.random() * 4) + 1}`, // Temporary
+        excerpt: data.content.substring(0, 150),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      toast({ title: "Success", description: "Article uploaded successfully!" });
+      articleForm.reset();
+    } catch (error) {
+      console.error("Error uploading article:", error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to upload article." });
+    }
+  };
+
+  const onVideoSubmit: SubmitHandler<VideoFormValues> = async (data) => {
+     if (!firestore) return;
+    try {
+       await addDoc(collection(firestore, 'videos'), {
+        title: data.title,
+        description: data.description,
+        youtubeUrl: data.url,
+        thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`, // Temporary
+        category: 'General', // Temporary
+        duration: '00:00', // Temporary
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: "Success", description: "Video added successfully!" });
+      videoForm.reset();
+    } catch (error) {
+      console.error("Error adding video:", error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to add video." });
+    }
+  };
 
   return (
     <div>
@@ -37,28 +112,46 @@ export default function UploadPage() {
               <CardTitle>Upload New Article</CardTitle>
               <CardDescription>Fill in the details to publish a new article.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="article-title">Title</Label>
-                <Input id="article-title" placeholder="The Power of Prayer" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="article-author">Author</Label>
-                <Input id="article-author" placeholder="Pastor John Doe" />
-              </div>
-               <div className="grid gap-2">
-                <Label htmlFor="article-category">Category</Label>
-                <Input id="article-category" placeholder="Christian Living" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="article-image">Cover Image</Label>
-                <Input id="article-image" type="file" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="article-content">Content</Label>
-                <Textarea id="article-content" placeholder="Start writing your article here..." className="min-h-[200px]" />
-              </div>
-              <Button className="w-full md:w-auto">Upload Article</Button>
+            <CardContent>
+              <Form {...articleForm}>
+                <form onSubmit={articleForm.handleSubmit(onArticleSubmit)} className="space-y-4">
+                  <FormField control={articleForm.control} name="title" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl><Input placeholder="The Power of Prayer" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={articleForm.control} name="author" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Author</FormLabel>
+                      <FormControl><Input placeholder="Pastor John Doe" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={articleForm.control} name="category" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl><Input placeholder="Christian Living" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <div className="grid gap-2">
+                    <Label htmlFor="article-image">Cover Image</Label>
+                    <Input id="article-image" type="file" disabled />
+                  </div>
+                  <FormField control={articleForm.control} name="content" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Content</FormLabel>
+                      <FormControl><Textarea placeholder="Start writing your article here..." className="min-h-[200px]" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <Button type="submit" className="w-full md:w-auto" disabled={articleForm.formState.isSubmitting}>
+                    {articleForm.formState.isSubmitting ? 'Uploading...' : 'Upload Article'}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -68,34 +161,50 @@ export default function UploadPage() {
               <CardTitle>Upload New Video</CardTitle>
               <CardDescription>Upload a video file or provide a YouTube URL.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-               <div className="grid gap-2">
-                <Label htmlFor="video-title">Title</Label>
-                <Input id="video-title" placeholder="Sermon on Faith" />
-              </div>
-               <div className="grid gap-2">
-                <Label htmlFor="video-description">Description</Label>
-                <Textarea id="video-description" placeholder="A brief description of the video." />
-              </div>
-              <Tabs defaultValue="youtube" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="youtube">YouTube</TabsTrigger>
-                  <TabsTrigger value="upload">Upload</TabsTrigger>
-                </TabsList>
-                <TabsContent value="youtube" className="pt-4">
-                   <div className="grid gap-2">
-                    <Label htmlFor="video-url">YouTube URL</Label>
-                    <Input id="video-url" placeholder="https://www.youtube.com/watch?v=..." />
-                  </div>
-                </TabsContent>
-                 <TabsContent value="upload" className="pt-4">
-                   <div className="grid gap-2">
-                    <Label htmlFor="video-file">Video File</Label>
-                    <Input id="video-file" type="file" accept="video/*" />
-                  </div>
-                </TabsContent>
-              </Tabs>
-              <Button className="w-full md:w-auto">Add Video</Button>
+            <CardContent>
+              <Form {...videoForm}>
+                <form onSubmit={videoForm.handleSubmit(onVideoSubmit)} className="space-y-4">
+                  <FormField control={videoForm.control} name="title" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Title</FormLabel>
+                        <FormControl><Input placeholder="Sermon on Faith" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  <FormField control={videoForm.control} name="description" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl><Textarea placeholder="A brief description of the video." {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  
+                  <Tabs defaultValue="youtube" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="youtube">YouTube</TabsTrigger>
+                      <TabsTrigger value="upload" disabled>Upload</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="youtube" className="pt-4">
+                      <FormField control={videoForm.control} name="url" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>YouTube URL</FormLabel>
+                          <FormControl><Input placeholder="https://www.youtube.com/watch?v=..." {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </TabsContent>
+                    <TabsContent value="upload" className="pt-4">
+                       <div className="grid gap-2">
+                        <Label htmlFor="video-file">Video File</Label>
+                        <Input id="video-file" type="file" accept="video/*" disabled />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                  <Button type="submit" className="w-full md:w-auto" disabled={videoForm.formState.isSubmitting}>
+                    {videoForm.formState.isSubmitting ? 'Adding...' : 'Add Video'}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>

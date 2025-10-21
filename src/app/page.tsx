@@ -6,10 +6,10 @@ import { getArticles, getVideos, getAudioFiles } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ArrowRight, Film, Mic, BookOpen } from 'lucide-react';
 
-export default function Home() {
-  const latestVideos = getVideos().slice(0, 3);
-  const latestArticles = getArticles().slice(0, 3);
-  const latestAudio = getAudioFiles().slice(0, 3);
+export default async function Home() {
+  const latestVideos = await getVideos({ limit: 3 });
+  const latestArticles = await getArticles({ limit: 3 });
+  const latestAudio = await getAudioFiles({ limit: 3 });
 
   const getImage = (id: string) => {
     return PlaceHolderImages.find((img) => img.id === id)?.imageUrl || 'https://picsum.photos/seed/placeholder/400/300';
