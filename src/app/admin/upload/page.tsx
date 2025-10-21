@@ -112,96 +112,89 @@ export default function UploadPage() {
     
     let videoUrl = data.youtubeUrl;
 
-    if (data.videoFile) {
-        try {
+    try {
+        if (data.videoFile) {
             const storage = getStorage();
             const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
             const storageRef = ref(storage, fileName);
 
             await uploadBytes(storageRef, data.videoFile);
             videoUrl = await getDownloadURL(storageRef);
-        } catch (error: any) {
-            console.error("Video upload failed:", error);
-            if (error.code?.includes('storage/unauthorized')) {
-                toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
-            } else {
-                toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred during video upload." });
-            }
-            return; // Stop execution if file upload fails
+        }
+        
+        const videosCollection = collection(firestore, 'videos');
+        const videoData = {
+            title: data.title,
+            description: data.description,
+            videoUrl: videoUrl,
+            thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`,
+            category: 'General',
+            duration: '00:00', // Placeholder
+            createdAt: serverTimestamp(),
+        };
+
+        await addDoc(videosCollection, videoData);
+        toast({ title: "Success", description: "Video added successfully!" });
+        videoForm.reset();
+
+    } catch (error: any) {
+        console.error("Video upload failed:", error);
+        if (error.code?.includes('storage/unauthorized')) {
+            toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
+        } else if (error.name === 'FirebaseError') {
+             const permissionError = new FirestorePermissionError({
+                path: 'videos',
+                operation: 'create',
+                requestResourceData: data,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
+        else {
+            toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred during video upload." });
         }
     }
-    
-    const videosCollection = collection(firestore, 'videos');
-    const videoData = {
-        title: data.title,
-        description: data.description,
-        videoUrl: videoUrl,
-        thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`,
-        category: 'General',
-        duration: '00:00', // Placeholder
-        createdAt: serverTimestamp(),
-    };
-
-    addDoc(videosCollection, videoData)
-      .then(() => {
-          toast({ title: "Success", description: "Video added successfully!" });
-          videoForm.reset();
-      })
-      .catch(error => {
-          const permissionError = new FirestorePermissionError({
-              path: 'videos',
-              operation: 'create',
-              requestResourceData: videoData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-      });
   };
 
   const onAudioSubmit: SubmitHandler<AudioFormValues> = async (data) => {
     if (!firestore) return;
 
-    let audioUrl = '';
     try {
       const storage = getStorage();
       const fileName = `audio/${Date.now()}-${data.title.replace(/\s+/g, '-')}.webm`;
       const storageRef = ref(storage, fileName);
 
       await uploadBytes(storageRef, data.audioBlob, { contentType: 'audio/webm' });
-      audioUrl = await getDownloadURL(storageRef);
+      const audioUrl = await getDownloadURL(storageRef);
+
+      const audiosCollection = collection(firestore, 'audios');
+      const audioData = {
+        title: data.title,
+        description: data.description,
+        audioUrl: audioUrl,
+        category: "Devotional",
+        duration: `${Math.floor(data.duration / 60)}:${String(Math.floor(data.duration % 60)).padStart(2, '0')}`,
+        createdAt: serverTimestamp(),
+      };
+      
+      await addDoc(audiosCollection, audioData);
+      toast({ title: "Success", description: "Audio uploaded successfully!" });
+      audioForm.reset();
 
     } catch (error: any) {
       console.error("Audio upload failed:", error);
       if (error.code?.includes('storage/unauthorized')) {
          toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
-      } else {
-         toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred." });
-      }
-      return; // Stop if upload fails
-    }
-
-    const audiosCollection = collection(firestore, 'audios');
-    const audioData = {
-      title: data.title,
-      description: data.description,
-      audioUrl: audioUrl,
-      category: "Devotional",
-      duration: `${Math.floor(data.duration / 60)}:${String(Math.floor(data.duration % 60)).padStart(2, '0')}`,
-      createdAt: serverTimestamp(),
-    };
-    
-    addDoc(audiosCollection, audioData)
-      .then(() => {
-          toast({ title: "Success", description: "Audio uploaded successfully!" });
-          audioForm.reset();
-      })
-      .catch(error => {
-          const permissionError = new FirestorePermissionError({
+      } else if (error.name === 'FirebaseError') {
+           const permissionError = new FirestorePermissionError({
             path: 'audios',
             operation: 'create',
-            requestResourceData: audioData,
+            requestResourceData: data,
           });
           errorEmitter.emit('permission-error', permissionError);
-      });
+      } else {
+         toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred during audio upload." });
+      }
+    }
   };
 
 
