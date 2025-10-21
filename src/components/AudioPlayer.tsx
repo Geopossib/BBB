@@ -5,7 +5,6 @@ import { useState, useRef, useEffect, useCallback, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Rewind, FastForward, Volume2, VolumeX, Download } from 'lucide-react';
 import WaveSurfer from 'wavesurfer.js';
-import { cn } from '@/lib/utils';
 
 interface AudioPlayerProps {
   src: string;
@@ -34,6 +33,9 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
       barRadius: 2,
       url: src,
       barAlign: 'bottom',
+      fetchParams: {
+        mode: 'cors'
+      }
     });
 
     wavesurferRef.current = wavesurfer;
