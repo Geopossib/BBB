@@ -38,9 +38,6 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
       barRadius: 2,
       url: src,
       barAlign: 'bottom',
-      fetchParams: {
-        mode: 'no-cors'
-      }
     });
 
     wavesurferRef.current = wavesurfer;
