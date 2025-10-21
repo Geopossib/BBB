@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow read access to all files
+    match /{allPaths=**} {
+      allow read;
+    }
+
+    // Allow write access only to the 'audio/' directory for authenticated users
+    match /audio/{fileName} {
+      allow write: if request.auth != null;
+    }
+  }
+}
