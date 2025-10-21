@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "article-image-1",
+      "description": "An open bible on a wooden table with soft light.",
+      "imageUrl": "https://images.unsplash.com/photo-1499652848871-1527a310b13a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8b3BlbiUyMGJpYmxlfGVufDB8fHx8MTc2MTAyMjgyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "open bible"
+    },
+    {
+      "id": "article-image-2",
+      "description": "A diverse group of people worshiping together.",
+      "imageUrl": "https://images.unsplash.com/photo-1551327420-4b280d52cc68?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjb21tdW5pdHklMjB3b3JzaGlwfGVufDB8fHx8MTc2MTA1MzE2NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "community worship"
+    },
+    {
+      "id": "article-image-3",
+      "description": "Sunlight streaming through a church window.",
+      "imageUrl": "https://images.unsplash.com/photo-1533119510849-b64bf60c83c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaHVyY2glMjB3aW5kb3d8ZW58MHx8fHwxNzYwOTYyMzU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "church window"
+    },
+    {
+      "id": "article-image-4",
+      "description": "Hands holding a small plant, symbolizing growth.",
+      "imageUrl": "https://images.unsplash.com/photo-1647896726237-0f10a90f75c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGxhbnQlMjBncm93dGh8ZW58MHx8fHwxNzYwOTgzNDcxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "plant growth"
+    },
+    {
+      "id": "video-thumb-1",
+      "description": "A speaker on a stage giving a sermon.",
+      "imageUrl": "https://images.unsplash.com/photo-1535119782-71efca81996b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwYXN0b3IlMjBwcmVhY2hpbmd8ZW58MHx8fHwxNzYwOTYyMzU0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pastor preaching"
+    },
+    {
+      "id": "video-thumb-2",
+      "description": "A panel discussion on a theological topic.",
+      "imageUrl": "https://images.unsplash.com/photo-1582192730841-2a682d7375f9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwYW5lbCUyMGRpc2N1c3Npb258ZW58MHx8fHwxNzYxMDUzMTY0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "panel discussion"
+    },
+    {
+      "id": "video-thumb-3",
+      "description": "A choir singing hymns.",
+      "imageUrl": "https://images.unsplash.com/photo-1482627750753-afdba16659ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjaHVyY2glMjBjaG9pcnxlbnwwfHx8fDE3NjEwNTMxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "church choir"
+    },
+    {
+      "id": "video-thumb-4",
+      "description": "A documentary-style shot of a historical religious site.",
+      "imageUrl": "https://images.unsplash.com/photo-1719313441046-5b4c00bafd31?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxoaXN0b3JpY2FsJTIwc2l0ZXxlbnwwfHx8fDE3NjEwNTMxNjZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "historical site"
+    }
+  ]
 }
