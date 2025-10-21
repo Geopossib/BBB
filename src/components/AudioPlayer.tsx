@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type FC } from 'react';
@@ -22,13 +23,21 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration }) => {
     if (!audio) return;
 
     const updateProgress = () => {
-      setCurrentTime(audio.currentTime);
-      setProgress((audio.currentTime / audio.duration) * 100);
+      if (audio.duration) { // Ensure duration is available
+          setCurrentTime(audio.currentTime);
+          setProgress((audio.currentTime / audio.duration) * 100);
+      }
     };
 
     const handleEnded = () => {
       setIsPlaying(false);
     };
+    
+    // Reset state when src changes
+    setIsPlaying(false);
+    setProgress(0);
+    setCurrentTime(0);
+
 
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', handleEnded);
@@ -37,7 +46,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration }) => {
       audio.removeEventListener('timeupdate', updateProgress);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, []);
+  }, [src]);
 
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -51,7 +60,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration }) => {
   };
   
   const handleSliderChange = (value: number[]) => {
-    if (audioRef.current) {
+    if (audioRef.current && audioRef.current.duration) {
         const newTime = (value[0] / 100) * audioRef.current.duration;
         audioRef.current.currentTime = newTime;
         setCurrentTime(newTime);
@@ -66,6 +75,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration }) => {
   };
 
   const formatTime = (timeInSeconds: number) => {
+    if (isNaN(timeInSeconds)) return "0:00";
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
