@@ -132,8 +132,7 @@ export default function UploadPage() {
 
   const onAudioSubmit: SubmitHandler<AudioFormValues> = async (data) => {
     if (!firestore) return;
-    audioForm.formState.isSubmitting = true;
-
+    
     try {
       const storage = getStorage();
       const fileName = `audio/${Date.now()}-${data.title.replace(/\s+/g, '-')}.webm`;
@@ -173,8 +172,6 @@ export default function UploadPage() {
       } else {
          toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred." });
       }
-    } finally {
-        audioForm.formState.isSubmitting = false;
     }
   };
 
