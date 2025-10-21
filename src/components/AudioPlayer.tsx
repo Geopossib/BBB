@@ -1,78 +1,85 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type FC } from 'react';
+import { useState, useRef, useEffect, useCallback, type FC } from 'react';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Play, Pause, Download, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Rewind, FastForward, Volume2, VolumeX, Download } from 'lucide-react';
+import WaveSurfer from 'wavesurfer.js';
+import { cn } from '@/lib/utils';
 
 interface AudioPlayerProps {
   src: string;
   duration: string;
 }
 
-const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration }) => {
-  const audioRef = useRef<HTMLAudioElement>(null);
+const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) => {
+  const waveformRef = useRef<HTMLDivElement>(null);
+  const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [totalDuration, setTotalDuration] = useState(0);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    if (!waveformRef.current) return;
 
-    const updateProgress = () => {
-      if (audio.duration) { // Ensure duration is available
-          setCurrentTime(audio.currentTime);
-          setProgress((audio.currentTime / audio.duration) * 100);
-      }
-    };
+    const wavesurfer = WaveSurfer.create({
+      container: waveformRef.current,
+      waveColor: 'hsl(var(--muted-foreground) / 0.5)',
+      progressColor: 'hsl(var(--primary))',
+      cursorColor: 'hsl(var(--primary))',
+      height: 80,
+      barWidth: 3,
+      barGap: 3,
+      barRadius: 2,
+      url: src,
+      barAlign: 'bottom',
+    });
 
-    const handleEnded = () => {
+    wavesurferRef.current = wavesurfer;
+
+    wavesurfer.on('ready', (duration) => {
+      setTotalDuration(duration);
+    });
+
+    wavesurfer.on('audioprocess', (time) => {
+      setCurrentTime(time);
+    });
+
+    wavesurfer.on('finish', () => {
       setIsPlaying(false);
-    };
+    });
     
-    // Reset state when src changes
-    setIsPlaying(false);
-    setProgress(0);
-    setCurrentTime(0);
+    wavesurfer.on('play', () => setIsPlaying(true));
+    wavesurfer.on('pause', () => setIsPlaying(false));
 
-
-    audio.addEventListener('timeupdate', updateProgress);
-    audio.addEventListener('ended', handleEnded);
 
     return () => {
-      audio.removeEventListener('timeupdate', updateProgress);
-      audio.removeEventListener('ended', handleEnded);
+      wavesurfer.destroy();
     };
   }, [src]);
 
-  const togglePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
+  const handlePlayPause = useCallback(() => {
+    wavesurferRef.current?.playPause();
+  }, []);
   
-  const handleSliderChange = (value: number[]) => {
-    if (audioRef.current && audioRef.current.duration) {
-        const newTime = (value[0] / 100) * audioRef.current.duration;
-        audioRef.current.currentTime = newTime;
-        setCurrentTime(newTime);
-    }
-  };
+  const handleSeek = (direction: 'forward' | 'backward') => {
+      const amount = 5; // seek 5 seconds
+      if(direction === 'forward') {
+          wavesurferRef.current?.seekTo(wavesurferRef.current.getCurrentTime() / wavesurferRef.current.getDuration() + amount / wavesurferRef.current.getDuration())
+      } else {
+           wavesurferRef.current?.seekTo(wavesurferRef.current.getCurrentTime() / wavesurferRef.current.getDuration() - amount / wavesurferRef.current.getDuration())
+      }
+  }
 
-  const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+
+  const handleMute = () => {
+    if(wavesurferRef.current) {
+        wavesurferRef.current.setMuted(!isMuted);
+        setIsMuted(!isMuted);
     }
-  };
+  }
+
 
   const formatTime = (timeInSeconds: number) => {
     if (isNaN(timeInSeconds)) return "0:00";
@@ -82,29 +89,37 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration }) => {
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 border rounded-lg bg-secondary/50">
-      <audio ref={audioRef} src={src} preload="metadata"></audio>
-      <Button onClick={togglePlayPause} size="icon" variant="ghost">
-        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-      </Button>
-      <div className="flex-grow flex items-center gap-2">
-        <span className="text-sm font-mono w-12 text-muted-foreground">{formatTime(currentTime)}</span>
-        <Slider
-          value={[progress]}
-          max={100}
-          step={1}
-          onValueChange={handleSliderChange}
-        />
-        <span className="text-sm font-mono w-12 text-muted-foreground">{duration}</span>
+    <div className="flex flex-col gap-2">
+      <div ref={waveformRef} className="w-full cursor-pointer" />
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-sm font-mono text-muted-foreground w-14 text-center">
+            {formatTime(currentTime)}
+        </span>
+        <div className="flex items-center gap-2">
+            <Button onClick={() => handleSeek('backward')} size="icon" variant="ghost" className="hidden sm:inline-flex">
+              <Rewind className="h-5 w-5" />
+            </Button>
+            <Button onClick={handlePlayPause} size="icon" className="w-12 h-12 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90">
+                {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 fill-current" />}
+            </Button>
+            <Button onClick={() => handleSeek('forward')} size="icon" variant="ghost" className="hidden sm:inline-flex">
+              <FastForward className="h-5 w-5" />
+            </Button>
+        </div>
+        <span className="text-sm font-mono text-muted-foreground w-14 text-center">
+            {formatTime(totalDuration)}
+        </span>
       </div>
-      <Button onClick={toggleMute} size="icon" variant="ghost">
-        {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-      </Button>
-      <Button asChild variant="outline" size="icon">
-        <a href={src} download>
-          <Download className="h-5 w-5" />
-        </a>
-      </Button>
+       <div className="flex items-center justify-center gap-4 mt-2">
+         <Button onClick={handleMute} size="icon" variant="ghost">
+          {isMuted ? <VolumeX className="h-5 w-5 text-muted-foreground" /> : <Volume2 className="h-5 w-5 text-muted-foreground" />}
+        </Button>
+        <Button asChild variant="ghost" size="icon">
+          <a href={src} download>
+            <Download className="h-5 w-5 text-muted-foreground" />
+          </a>
+        </Button>
+      </div>
     </div>
   );
 };
