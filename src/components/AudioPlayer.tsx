@@ -64,12 +64,12 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
   }, []);
   
   const handleSeek = (direction: 'forward' | 'backward') => {
+      if (!wavesurferRef.current) return;
       const amount = 5; // seek 5 seconds
-      if(direction === 'forward') {
-          wavesurferRef.current?.seekTo(wavesurferRef.current.getCurrentTime() / wavesurferRef.current.getDuration() + amount / wavesurferRef.current.getDuration())
-      } else {
-           wavesurferRef.current?.seekTo(wavesurferRef.current.getCurrentTime() / wavesurferRef.current.getDuration() - amount / wavesurferRef.current.getDuration())
-      }
+      const currentTime = wavesurferRef.current.getCurrentTime();
+      const duration = wavesurferRef.current.getDuration();
+      const newTime = direction === 'forward' ? currentTime + amount : currentTime - amount;
+      wavesurferRef.current.seekTo(newTime / duration);
   }
 
 
@@ -82,7 +82,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
 
 
   const formatTime = (timeInSeconds: number) => {
-    if (isNaN(timeInSeconds)) return "0:00";
+    if (isNaN(timeInSeconds) || timeInSeconds < 0) return "0:00";
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
