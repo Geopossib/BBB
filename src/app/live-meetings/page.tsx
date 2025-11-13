@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Clock, Calendar } from 'lucide-react';
+import Link from 'next/link';
 
 // Mock data for now, this will be replaced with Firestore data
 const mockMeetings = [
@@ -80,9 +81,9 @@ export default function LiveMeetingsPage() {
               </CardContent>
               <CardFooter className="bg-secondary/50 px-6 py-4">
                 <Button asChild className="w-full sm:w-auto">
-                  <a href={meeting.meetingUrl} target="_blank" rel="noopener noreferrer">
+                  <Link href="/whatsapp-connect">
                     Join Meeting
-                  </a>
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>
