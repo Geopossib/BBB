@@ -5,7 +5,7 @@ import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useFirestore } from '@/firebase';
-import { addDoc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, serverTimestamp, writeBatch, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,46 +55,52 @@ export default function CourseForm() {
     if (!firestore) return;
     setIsSubmitting(true);
 
-    try {
-      // 1. Create the course document
-      const courseCollection = collection(firestore, 'courses');
-      const courseData = {
-        title: data.title,
-        description: data.description,
-        thumbnailUrl: data.thumbnailUrl,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        lessonCount: data.lessons.length,
-      };
+    const batch = writeBatch(firestore);
+    
+    // 1. Create a reference for the new course document
+    const courseCollection = collection(firestore, 'courses');
+    const courseDocRef = doc(courseCollection); // Create a new doc ref with a unique ID
 
-      const courseDocRef = await addDoc(courseCollection, courseData);
+    // 2. Set the data for the new course document in the batch
+    const courseData = {
+      title: data.title,
+      description: data.description,
+      thumbnailUrl: data.thumbnailUrl,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lessonCount: data.lessons.length,
+    };
+    batch.set(courseDocRef, courseData);
 
-      // 2. Create a batch write for all lessons
-      const batch = writeBatch(firestore);
-      const lessonsCollection = collection(firestore, 'courses', courseDocRef.id, 'lessons');
-
-      data.lessons.forEach((lesson, index) => {
-        const lessonDocRef = doc(lessonsCollection);
+    // 3. Create references and set data for each lesson in the subcollection
+    const lessonsCollectionRef = collection(courseDocRef, 'lessons');
+    data.lessons.forEach((lesson, index) => {
+        const lessonDocRef = doc(lessonsCollectionRef); // New doc ref for the lesson
         batch.set(lessonDocRef, {
           ...lesson,
           order: index + 1,
           createdAt: serverTimestamp(),
         });
-      });
+    });
 
-      // 3. Commit the batch
+    try {
+      // 4. Commit the batch
       await batch.commit();
-
       toast({ title: 'Success', description: 'Course created successfully!' });
       form.reset();
     } catch (error: any) {
-      console.error('Error creating course: ', error);
+      console.error('Error creating course with batch: ', error);
       const permissionError = new FirestorePermissionError({
-          path: 'courses or lessons subcollection', // General path
+          path: `courses/${courseDocRef.id}`, // Path for the main document
           operation: 'create',
           requestResourceData: data,
       });
       errorEmitter.emit('permission-error', permissionError);
+      toast({
+          variant: 'destructive',
+          title: 'Error creating course',
+          description: 'You may not have the required permissions.'
+      });
     } finally {
       setIsSubmitting(false);
     }
