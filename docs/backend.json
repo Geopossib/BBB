@@ -6,40 +6,14 @@
       "type": "object",
       "description": "Represents a blog article with associated content.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the article."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the article."
-        },
-        "content": {
-          "type": "string",
-          "description": "The main text content of the article, formatted as HTML or plain text."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL of the associated image for the article."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the article was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the article was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the article." },
+        "title": { "type": "string", "description": "Title of the article." },
+        "content": { "type": "string", "description": "The main text content of the article, formatted as HTML or plain text." },
+        "imageUrl": { "type": "string", "description": "URL of the associated image for the article." },
+        "createdAt": { "type": "string", "description": "Timestamp indicating when the article was created.", "format": "date-time" },
+        "updatedAt": { "type": "string", "description": "Timestamp indicating when the article was last updated.", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "title",
-        "content",
-        "imageUrl",
-        "createdAt"
-      ]
+      "required": ["id", "title", "content", "imageUrl", "createdAt"]
     },
     "Video": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -47,44 +21,15 @@
       "type": "object",
       "description": "Represents a video uploaded by the admin.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the video."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the video."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the video content."
-        },
-        "videoUrl": {
-          "type": "string",
-          "description": "URL of the video file or YouTube link."
-        },
-        "thumbnailUrl": {
-          "type": "string",
-          "description": "URL of the video thumbnail image."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the video was uploaded.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the video was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the video." },
+        "title": { "type": "string", "description": "Title of the video." },
+        "description": { "type": "string", "description": "Description of the video content." },
+        "videoUrl": { "type": "string", "description": "URL of the video file or YouTube link." },
+        "thumbnailUrl": { "type": "string", "description": "URL of the video thumbnail image." },
+        "createdAt": { "type": "string", "description": "Timestamp indicating when the video was uploaded.", "format": "date-time" },
+        "updatedAt": { "type": "string", "description": "Timestamp indicating when the video was last updated.", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "title",
-        "videoUrl",
-        "thumbnailUrl",
-        "createdAt"
-      ]
+      "required": ["id", "title", "videoUrl", "thumbnailUrl", "createdAt"]
     },
     "LiveMeeting": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -92,70 +37,58 @@
       "type": "object",
       "description": "Represents a live meeting announcement with links to social media platforms.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the live meeting."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the live meeting."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the live meeting."
-        },
-        "youtubeUrl": {
-          "type": "string",
-          "description": "URL for the YouTube live stream.",
-          "format": "uri"
-        },
-        "facebookUrl": {
-          "type": "string",
-          "description": "URL for the Facebook live stream.",
-          "format": "uri"
-        },
-        "twitterUrl": {
-          "type": "string",
-          "description": "URL for the X (Twitter) live stream.",
-          "format": "uri"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the live meeting was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the live meeting was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the live meeting." },
+        "title": { "type": "string", "description": "Title of the live meeting." },
+        "description": { "type": "string", "description": "Description of the live meeting." },
+        "youtubeUrl": { "type": "string", "description": "URL for the YouTube live stream.", "format": "uri" },
+        "facebookUrl": { "type": "string", "description": "URL for the Facebook live stream.", "format": "uri" },
+        "twitterUrl": { "type": "string", "description": "URL for the X (Twitter) live stream.", "format": "uri" },
+        "createdAt": { "type": "string", "description": "Timestamp indicating when the live meeting was created.", "format": "date-time" },
+        "updatedAt": { "type": "string", "description": "Timestamp indicating when the live meeting was last updated.", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "title",
-        "description"
-      ]
+      "required": ["id", "title", "description"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Represents a course containing a series of lessons.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the course." },
+        "description": { "type": "string", "description": "A summary of the course content." },
+        "thumbnailUrl": { "type": "string", "description": "URL of the course thumbnail image." },
+        "lessonCount": { "type": "number", "description": "Total number of lessons in the course." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "thumbnailUrl", "lessonCount"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "Represents a single lesson within a course.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the lesson." },
+        "youtubeUrl": { "type": "string", "description": "URL of the lesson video on YouTube.", "format": "uri" },
+        "order": { "type": "number", "description": "The sequence number of the lesson within the course." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "youtubeUrl", "order"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "collections": {
-      "articles": {
-        "$ref": "#/entities/Article",
-        "description": "Stores articles uploaded by the admin."
-      },
-      "videos": {
-        "$ref": "#/entities/Video",
-        "description": "Stores videos uploaded by the admin."
-      },
-      "liveMeetings": {
-        "$ref": "#/entities/LiveMeeting",
-        "description": "Stores information about live meeting sessions."
+      "articles": { "$ref": "#/entities/Article", "description": "Stores articles uploaded by the admin." },
+      "videos": { "$ref": "#/entities/Video", "description": "Stores videos uploaded by the admin." },
+      "liveMeetings": { "$ref": "#/entities/LiveMeeting", "description": "Stores information about live meeting sessions." },
+      "courses": { "$ref": "#/entities/Course", "description": "Stores course overview information." }
+    },
+    "subcollections": {
+      "/courses/{courseId}/lessons/{lessonId}": {
+        "schema": { "$ref": "#/entities/Lesson" },
+        "description": "Stores the individual lessons for a specific course."
       }
     }
   }

@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import LiveMeetingForm from './LiveMeetingForm';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import CourseForm from './CourseForm';
 
 const articleSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -119,9 +120,10 @@ export default function UploadPage() {
     <div>
       <h1 className="text-3xl font-headline font-bold mb-6">Add Content</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="article">Article</TabsTrigger>
           <TabsTrigger value="video">Video</TabsTrigger>
+          <TabsTrigger value="course">Course</TabsTrigger>
           <TabsTrigger value="live-meeting">Live Meeting</TabsTrigger>
         </TabsList>
         <TabsContent value="article">
@@ -210,6 +212,9 @@ export default function UploadPage() {
               </Form>
             </CardContent>
           </Card>
+        </TabsContent>
+         <TabsContent value="course">
+            <CourseForm />
         </TabsContent>
          <TabsContent value="live-meeting">
           <LiveMeetingForm />

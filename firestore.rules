@@ -65,6 +65,20 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if isSignedIn();
     }
+
+    /**
+     * @description Public read access for courses and their lessons. Write access restricted to authenticated users.
+     * @path /databases/{database}/documents/courses/{courseId}
+     */
+    match /courses/{courseId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+
+      match /lessons/{lessonId} {
+        allow get, list: if true;
+        allow create, update, delete: if isSignedIn();
+      }
+    }
   }
 
   // Helper function to determine if a user is signed in

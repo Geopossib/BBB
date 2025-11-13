@@ -40,6 +40,24 @@ export type Video = {
   createdAt: Timestamp;
 };
 
+export type Course = {
+    id: string;
+    title: string;
+    description: string;
+    thumbnailUrl: string;
+    lessonCount: number;
+    createdAt: Timestamp;
+};
+
+export type Lesson = {
+    id: string;
+    title: string;
+    youtubeUrl: string;
+    order: number;
+    createdAt: Timestamp;
+};
+
+
 export async function getDocuments<T>(collectionName: string, options?: { limit?: number }): Promise<T[]> {
   if (!firestore) {
     console.error("Firestore is not initialized.");
@@ -98,4 +116,30 @@ export async function getVideoById(id: string): Promise<Video | undefined> {
   const docRef = doc(firestore, 'videos', id);
   const docSnap = await getDoc(docRef);
   return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Video : undefined;
+}
+
+
+export async function getCourses(options?: { limit?: number }): Promise<Course[]> {
+  return getDocuments<Course>('courses', options);
+}
+
+export async function getCourseById(id: string): Promise<Course | undefined> {
+  if (!firestore) {
+    console.error("Firestore is not initialized.");
+    return undefined;
+  }
+  const docRef = doc(firestore, 'courses', id);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Course : undefined;
+}
+
+export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
+  if (!firestore) {
+    console.error("Firestore is not initialized.");
+    return [];
+  }
+  const lessonsColRef = collection(firestore, 'courses', courseId, 'lessons');
+  const q = query(lessonsColRef, orderBy('order', 'asc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lesson));
 }
