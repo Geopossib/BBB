@@ -15,6 +15,13 @@ type VideoPageProps = {
   };
 };
 
+function getYoutubeVideoId(url: string): string | null {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
 
 export default function VideoPage({ params }: VideoPageProps) {
   const [video, setVideo] = useState<Video | null>(null);
@@ -69,7 +76,10 @@ export default function VideoPage({ params }: VideoPageProps) {
 
   const renderVideoPlayer = () => {
     if (video.youtubeUrl) {
-       const videoId = new URL(video.youtubeUrl).searchParams.get('v');
+       const videoId = getYoutubeVideoId(video.youtubeUrl);
+       if (!videoId) {
+           return <div className="w-full h-full rounded-lg shadow-xl bg-muted flex items-center justify-center"><p>Invalid YouTube URL.</p></div>
+       }
        const embedUrl = `https://www.youtube.com/embed/${videoId}`;
        return (
         <iframe
