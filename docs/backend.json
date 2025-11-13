@@ -90,7 +90,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "LiveMeeting",
       "type": "object",
-      "description": "Represents a live meeting session.",
+      "description": "Represents a live meeting announcement with links to social media platforms.",
       "properties": {
         "id": {
           "type": "string",
@@ -104,19 +104,20 @@
           "type": "string",
           "description": "Description of the live meeting."
         },
-        "startTime": {
+        "youtubeUrl": {
           "type": "string",
-          "description": "Timestamp indicating the start time of the live meeting.",
-          "format": "date-time"
+          "description": "URL for the YouTube live stream.",
+          "format": "uri"
         },
-        "endTime": {
+        "facebookUrl": {
           "type": "string",
-          "description": "Timestamp indicating the end time of the live meeting.",
-          "format": "date-time"
+          "description": "URL for the Facebook live stream.",
+          "format": "uri"
         },
-        "meetingUrl": {
+        "twitterUrl": {
           "type": "string",
-          "description": "URL for accessing the live meeting (e.g., Zoom, Google Meet link)."
+          "description": "URL for the X (Twitter) live stream.",
+          "format": "uri"
         },
         "createdAt": {
           "type": "string",
@@ -132,9 +133,7 @@
       "required": [
         "id",
         "title",
-        "startTime",
-        "endTime",
-        "meetingUrl"
+        "description"
       ]
     }
   },

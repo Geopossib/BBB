@@ -40,7 +40,7 @@ export type Video = {
   createdAt: Timestamp;
 };
 
-async function getDocuments<T>(collectionName: string, options?: { limit?: number }): Promise<T[]> {
+export async function getDocuments<T>(collectionName: string, options?: { limit?: number }): Promise<T[]> {
   if (!firestore) {
     console.error("Firestore is not initialized.");
     return [];
