@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { Search, Menu, Home, Film, Mic, BookOpen, Video, ShieldCheck } from 'lucide-react';
+import { Search, Menu, Home, Film, BookOpen, Video, ShieldCheck } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/blog', label: 'Articles', icon: BookOpen },
   { href: '/videos', label: 'Videos', icon: Film },
-  { href: '/audio', label: 'Audio', icon: Mic },
   { href: '/live-meetings', label: 'Live Meetings', icon: Video },
 ];
 

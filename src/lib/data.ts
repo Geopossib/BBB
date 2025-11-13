@@ -40,16 +40,6 @@ export type Video = {
   createdAt: Timestamp;
 };
 
-export type AudioFile = {
-  id: string;
-  title: string;
-  description: string;
-  audioUrl: string;
-  category: string;
-  duration: string;
-  createdAt: Timestamp;
-};
-
 async function getDocuments<T>(collectionName: string, options?: { limit?: number }): Promise<T[]> {
   if (!firestore) {
     console.error("Firestore is not initialized.");
@@ -108,18 +98,4 @@ export async function getVideoById(id: string): Promise<Video | undefined> {
   const docRef = doc(firestore, 'videos', id);
   const docSnap = await getDoc(docRef);
   return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Video : undefined;
-}
-
-export async function getAudioFiles(options?: { limit?: number }): Promise<AudioFile[]> {
-    return getDocuments<AudioFile>('audios', options);
-}
-
-export async function getAudioById(id: string): Promise<AudioFile | undefined> {
-  if (!firestore) {
-    console.error("Firestore is not initialized.");
-    return undefined;
-  }
-  const docRef = doc(firestore, 'audios', id);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as AudioFile : undefined;
 }

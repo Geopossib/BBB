@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,8 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Progress } from '@/components/ui/progress';
-import AudioRecorder from '@/components/AudioRecorder';
 import LiveMeetingForm from './LiveMeetingForm';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
@@ -25,37 +22,22 @@ const articleSchema = z.object({
   author: z.string().min(1, "Author is required"),
   category: z.string().min(1, "Category is required"),
   content: z.string().min(10, "Content must be at least 10 characters"),
-  // image will be handled separately
 });
 
 const videoSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().min(1, "Description is required"),
-  youtubeUrl: z.string().url("Please enter a valid YouTube URL").optional().or(z.literal('')),
-  videoFile: z.instanceof(File).optional(),
-}).refine(data => data.youtubeUrl || data.videoFile, {
-    message: "Either a YouTube URL or a video file is required.",
-    path: ["youtubeUrl"], // you can use any field path here
-});
-
-const audioSchema = z.object({
-    title: z.string().min(1, "Title is required"),
-    description: z.string().min(1, "Description is required"),
-    audioBlob: z.instanceof(Blob, { message: "An audio recording or file is required." }),
-    duration: z.number().min(1, "Duration is required"),
+  youtubeUrl: z.string().url("Please enter a valid YouTube URL"),
 });
 
 
 type ArticleFormValues = z.infer<typeof articleSchema>;
 type VideoFormValues = z.infer<typeof videoSchema>;
-type AudioFormValues = z.infer<typeof audioSchema>;
 
 export default function UploadPage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tab || "article");
-  const [activeVideoTab, setActiveVideoTab] = useState("youtube");
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -68,11 +50,6 @@ export default function UploadPage() {
   const videoForm = useForm<VideoFormValues>({
     resolver: zodResolver(videoSchema),
      defaultValues: { title: "", description: "", youtubeUrl: "" },
-  });
-
-  const audioForm = useForm<AudioFormValues>({
-      resolver: zodResolver(audioSchema),
-      defaultValues: { title: "", description: "", audioBlob: undefined, duration: 0 },
   });
 
   useEffect(() => {
@@ -113,163 +90,44 @@ export default function UploadPage() {
     if (!firestore) return;
 
     const videosCollection = collection(firestore, 'videos');
-
-    // Handle YouTube link submission (no upload required)
-    if (data.youtubeUrl && !data.videoFile) {
-        const videoData = {
-            title: data.title,
-            description: data.description,
-            videoUrl: '',
-            youtubeUrl: data.youtubeUrl,
-            thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`,
-            category: 'General',
-            duration: '00:00', // Placeholder
-            createdAt: serverTimestamp(),
-        };
-        addDoc(videosCollection, videoData)
-            .then(() => {
-                toast({ title: "Success", description: "Video link added successfully!" });
-                videoForm.reset();
-            })
-            .catch(error => {
-                const permissionError = new FirestorePermissionError({
-                    path: videosCollection.path,
-                    operation: 'create',
-                    requestResourceData: videoData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
+    const videoData = {
+        title: data.title,
+        description: data.description,
+        videoUrl: '',
+        youtubeUrl: data.youtubeUrl,
+        thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`,
+        category: 'General',
+        duration: '00:00', // Placeholder
+        createdAt: serverTimestamp(),
+    };
+    addDoc(videosCollection, videoData)
+        .then(() => {
+            toast({ title: "Success", description: "Video link added successfully!" });
+            videoForm.reset();
+        })
+        .catch(error => {
+            const permissionError = new FirestorePermissionError({
+                path: videosCollection.path,
+                operation: 'create',
+                requestResourceData: videoData,
             });
-        return;
-    }
-
-    // Handle direct file upload
-    if (data.videoFile) {
-        const storage = getStorage();
-        const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
-        const storageRef = ref(storage, fileName);
-        const uploadTask = uploadBytesResumable(storageRef, data.videoFile);
-
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Video upload failed:", error);
-                setUploadProgress(null);
-                if (error.code?.includes('storage/unauthorized')) {
-                    toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload videos. Please check your Firebase Storage security rules." });
-                } else {
-                    toast({ variant: "destructive", title: "Error", description: "An unknown error occurred during video upload." });
-                }
-                 videoForm.reset(); // Also reset form on error
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    const videoData = {
-                        title: data.title,
-                        description: data.description,
-                        videoUrl: downloadURL,
-                        youtubeUrl: '',
-                        thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`,
-                        category: 'General',
-                        duration: '00:00', // Placeholder
-                        createdAt: serverTimestamp(),
-                    };
-
-                    addDoc(videosCollection, videoData)
-                        .then(() => {
-                            toast({ title: "Success", description: "Video uploaded successfully!" });
-                        })
-                        .catch(error => {
-                            const permissionError = new FirestorePermissionError({
-                                path: videosCollection.path,
-                                operation: 'create',
-                                requestResourceData: videoData,
-                            });
-                            errorEmitter.emit('permission-error', permissionError);
-                        })
-                        .finally(() => {
-                            setUploadProgress(null);
-                            videoForm.reset();
-                        });
-                });
-            }
-        );
-    }
+            errorEmitter.emit('permission-error', permissionError);
+        });
   };
-
-  const onAudioSubmit: SubmitHandler<AudioFormValues> = (data) => {
-    if (!firestore) return;
-
-    const storage = getStorage();
-    const fileName = `audio/${Date.now()}-${data.title.replace(/\s+/g, '-')}.webm`;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, data.audioBlob, { contentType: 'audio/webm' });
-    
-    uploadTask.on('state_changed',
-        (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgress(progress);
-        },
-        (error) => {
-            console.error("Audio upload failed:", error);
-            setUploadProgress(null);
-            if (error.code?.includes('storage/unauthorized')) {
-                toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload audio files. Please check your Firebase Storage security rules." });
-            } else {
-                toast({ variant: "destructive", title: "Error", description: "An unknown error occurred during audio upload." });
-            }
-            audioForm.reset();
-        },
-        () => {
-            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                const audiosCollection = collection(firestore, 'audios');
-                const audioData = {
-                    title: data.title,
-                    description: data.description,
-                    audioUrl: downloadURL,
-                    category: "Devotional",
-                    duration: `${Math.floor(data.duration / 60)}:${String(Math.floor(data.duration % 60)).padStart(2, '0')}`,
-                    createdAt: serverTimestamp(),
-                };
-                
-                addDoc(audiosCollection, audioData)
-                    .then(() => {
-                        toast({ title: "Success", description: "Audio uploaded successfully!" });
-                    })
-                    .catch(error => {
-                        const permissionError = new FirestorePermissionError({
-                            path: audiosCollection.path,
-                            operation: 'create',
-                            requestResourceData: audioData,
-                        });
-                        errorEmitter.emit('permission-error', permissionError);
-                    })
-                    .finally(() => {
-                       setUploadProgress(null);
-                       audioForm.reset();
-                    });
-            });
-        }
-    );
-  };
-
 
   return (
     <div>
-      <h1 className="text-3xl font-headline font-bold mb-6">Upload Content</h1>
+      <h1 className="text-3xl font-headline font-bold mb-6">Add Content</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="article">Article</TabsTrigger>
           <TabsTrigger value="video">Video</TabsTrigger>
-          <TabsTrigger value="audio">Audio</TabsTrigger>
           <TabsTrigger value="live-meeting">Live Meeting</TabsTrigger>
         </TabsList>
         <TabsContent value="article">
           <Card>
             <CardHeader>
-              <CardTitle>Upload New Article</CardTitle>
+              <CardTitle>Publish New Article</CardTitle>
               <CardDescription>Fill in the details to publish a new article.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -308,7 +166,7 @@ export default function UploadPage() {
                     </FormItem>
                   )} />
                   <Button type="submit" className="w-full md:w-auto" disabled={articleForm.formState.isSubmitting}>
-                    {articleForm.formState.isSubmitting ? 'Uploading...' : 'Upload Article'}
+                    {articleForm.formState.isSubmitting ? 'Publishing...' : 'Publish Article'}
                   </Button>
                 </form>
               </Form>
@@ -318,8 +176,8 @@ export default function UploadPage() {
         <TabsContent value="video">
            <Card>
             <CardHeader>
-              <CardTitle>Upload New Video</CardTitle>
-              <CardDescription>Upload a video file or provide a YouTube URL.</CardDescription>
+              <CardTitle>Add New Video</CardTitle>
+              <CardDescription>Provide a YouTube URL for the video.</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...videoForm}>
@@ -338,111 +196,15 @@ export default function UploadPage() {
                         <FormMessage />
                       </FormItem>
                     )} />
-                  
-                  <Tabs value={activeVideoTab} onValueChange={setActiveVideoTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="youtube">YouTube</TabsTrigger>
-                      <TabsTrigger value="upload">Upload</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="youtube" className="pt-4">
-                      <FormField control={videoForm.control} name="youtubeUrl" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>YouTube URL</FormLabel>
-                          <FormControl><Input placeholder="https://www.youtube.com/watch?v=..." {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </TabsContent>
-                    <TabsContent value="upload" className="pt-4">
-                       <FormField control={videoForm.control} name="videoFile" render={({ field: { onChange, value, ...rest } }) => (
-                        <FormItem>
-                          <FormLabel>Video File</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="file" 
-                              accept="video/*" 
-                              onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
-                              {...rest}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </TabsContent>
-                  </Tabs>
-                   {uploadProgress !== null && activeTab === 'video' && (
-                    <div className="space-y-2">
-                        <Label>Upload Progress</Label>
-                        <Progress value={uploadProgress} />
-                        <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}%</p>
-                    </div>
-                   )}
-                  <Button type="submit" className="w-full md:w-auto" disabled={uploadProgress !== null}>
-                    {uploadProgress !== null ? 'Uploading...' : 'Add Video'}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="audio">
-           <Card>
-            <CardHeader>
-              <CardTitle>Upload New Audio</CardTitle>
-              <CardDescription>Record a new audio file or upload an existing one.</CardDescription>
-            </CardHeader>
-            <CardContent>
-               <Form {...audioForm}>
-                <form onSubmit={audioForm.handleSubmit(onAudioSubmit)} className="space-y-4">
-                  <FormField control={audioForm.control} name="title" render={({ field }) => (
+                  <FormField control={videoForm.control} name="youtubeUrl" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl><Input placeholder="Daily Devotional" {...field} /></FormControl>
+                      <FormLabel>YouTube URL</FormLabel>
+                      <FormControl><Input placeholder="https://www.youtube.com/watch?v=..." {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={audioForm.control} name="description" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl><Textarea placeholder="A brief description of the audio file." {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                   <FormField control={audioForm.control} name="audioBlob" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Audio</FormLabel>
-                         <FormControl>
-                            <AudioRecorder
-                                onBlobChange={(blob, duration) => {
-                                  field.onChange(blob);
-                                  audioForm.setValue('duration', duration);
-                                }}
-                                onReset={() => {
-                                  field.onChange(null);
-                                  audioForm.setValue('duration', 0);
-                                  audioForm.resetField('audioBlob');
-                                }}
-                             />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                   )} />
-                   <FormField control={audioForm.control} name="duration" render={({ field }) => (
-                      <FormItem className="hidden">
-                        <FormLabel>Duration</FormLabel>
-                        <FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                   )} />
-                    {uploadProgress !== null && activeTab === 'audio' && (
-                        <div className="space-y-2">
-                            <Label>Upload Progress</Label>
-                            <Progress value={uploadProgress} />
-                             <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}%</p>
-                        </div>
-                    )}
-                  <Button type="submit" className="w-full md:w-auto" disabled={uploadProgress !== null}>
-                     {uploadProgress !== null ? "Uploading..." : "Upload Audio"}
+                  <Button type="submit" className="w-full md:w-auto" disabled={videoForm.formState.isSubmitting}>
+                    {videoForm.formState.isSubmitting ? 'Adding...' : 'Add Video'}
                   </Button>
                 </form>
               </Form>

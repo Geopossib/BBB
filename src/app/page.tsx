@@ -6,28 +6,25 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getArticles, getVideos, getAudioFiles, Article, Video, AudioFile } from '@/lib/data';
+import { getArticles, getVideos, Article, Video } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowRight, Film, Mic, BookOpen } from 'lucide-react';
+import { ArrowRight, Film, BookOpen } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const [latestVideos, setLatestVideos] = useState<Video[]>([]);
   const [latestArticles, setLatestArticles] = useState<Article[]>([]);
-  const [latestAudio, setLatestAudio] = useState<AudioFile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [videos, articles, audio] = await Promise.all([
+        const [videos, articles] = await Promise.all([
           getVideos({ limit: 3 }),
           getArticles({ limit: 3 }),
-          getAudioFiles({ limit: 3 })
         ]);
         setLatestVideos(videos);
         setLatestArticles(articles);
-        setLatestAudio(audio);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -148,35 +145,6 @@ export default function Home() {
                     </CardHeader>
                     <CardContent className="flex-grow">
                       <p className="text-muted-foreground line-clamp-3">{article.excerpt}</p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* New Audio Teachings */}
-        <section>
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-headline font-bold">New Audio Teachings</h2>
-            <Button variant="link" asChild className="text-accent-foreground">
-              <Link href="/audio">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
-            </Button>
-          </div>
-          {loading ? <LoadingSkeleton /> : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {latestAudio.map((audio) => (
-                <Link href="/audio" key={audio.id} className="group">
-                  <Card className="h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <CardHeader className="flex flex-row items-center gap-4">
-                      <div className="bg-secondary p-4 rounded-lg">
-                        <Mic className="h-8 w-8 text-primary" />
-                      </div>
-                      <CardTitle className="font-headline text-xl flex-1">{audio.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                      <p className="text-muted-foreground line-clamp-3">{audio.description}</p>
                     </CardContent>
                   </Card>
                 </Link>

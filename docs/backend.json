@@ -86,46 +86,6 @@
         "createdAt"
       ]
     },
-    "Audio": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Audio",
-      "type": "object",
-      "description": "Represents an audio file uploaded by the admin.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the audio."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the audio."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the audio content."
-        },
-        "audioUrl": {
-          "type": "string",
-          "description": "URL of the audio file."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the audio was uploaded.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the audio was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "audioUrl",
-        "createdAt"
-      ]
-    },
     "LiveMeeting": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "LiveMeeting",
@@ -193,10 +153,6 @@
       "videos": {
         "$ref": "#/entities/Video",
         "description": "Stores videos uploaded by the admin."
-      },
-      "audios": {
-        "$ref": "#/entities/Audio",
-        "description": "Stores audio files uploaded by the admin."
       },
       "liveMeetings": {
         "$ref": "#/entities/LiveMeeting",

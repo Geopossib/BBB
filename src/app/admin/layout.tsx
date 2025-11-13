@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Upload, LayoutDashboard, Settings, Video } from 'lucide-react';
+import { LayoutDashboard, Settings, Video, PlusSquare } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -20,7 +20,7 @@ import { useEffect } from 'react';
 
 const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/upload', label: 'Upload Content', icon: Upload },
+    { href: '/admin/upload', label: 'Add Content', icon: PlusSquare },
     { href: '/admin/upload?tab=live-meeting', label: 'Live Meetings', icon: Video },
     { href: '#', label: 'Settings', icon: Settings },
 ];
@@ -50,7 +50,7 @@ export default function AdminLayout({
       const [path, tabQuery] = href.split('?tab=');
       return pathname === path && activeTab === tabQuery;
     }
-    if (href === '/admin/upload' && activeTab && activeTab !== 'article' && activeTab !== 'video' && activeTab !== 'audio') {
+    if (href === '/admin/upload' && activeTab && activeTab !== 'article' && activeTab !== 'video') {
         return false;
     }
     return pathname === href;

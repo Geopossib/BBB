@@ -68,18 +68,12 @@ export default function VideoPage({ params }: VideoPageProps) {
   }
 
   const renderVideoPlayer = () => {
-    if (video.videoUrl) {
-      return (
-         <video controls className="w-full h-full rounded-lg shadow-xl" preload="metadata">
-            <source src={video.videoUrl} type="video/mp4" />
-            Your browser does not support the video tag.
-        </video>
-      )
-    }
     if (video.youtubeUrl) {
+       const videoId = new URL(video.youtubeUrl).searchParams.get('v');
+       const embedUrl = `https://www.youtube.com/embed/${videoId}`;
        return (
         <iframe
-            src={video.youtubeUrl}
+            src={embedUrl}
             title={video.title}
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
