@@ -62,10 +62,20 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="bg-primary text-primary-foreground py-20 md:py-32">
-        <div className="container mx-auto px-4 text-center">
+      <section className="relative bg-background text-primary-foreground py-20 md:py-32 flex items-center justify-center">
+        <div className="absolute inset-0">
+            <Image
+                src="https://i.ibb.co/1fWJp1f/hero-background.jpg"
+                alt="Connecting the world through faith"
+                fill
+                className="object-cover"
+                data-ai-hint="connecting world"
+            />
+            <div className="absolute inset-0 bg-primary/70"></div>
+        </div>
+        <div className="relative container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-headline font-bold mb-4">Welcome to BSN Connect</h1>
-          <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8">
+          <p className="text-lg md:text-xl max-w-3xl mx-auto mb-8 text-primary-foreground/90">
             Your home for spiritual growth. Explore inspiring videos, articles, and audio teachings from Bible Station Nigeria.
           </p>
           <div className="space-x-4">
