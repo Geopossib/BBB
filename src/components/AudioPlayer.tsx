@@ -122,7 +122,7 @@ const AudioPlayer: FC<AudioPlayerProps> = ({ src, duration: initialDuration }) =
 
   return (
     <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card">
-      <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" />
+      <audio ref={audioRef} preload="metadata" />
 
       <div className="flex items-center gap-4">
         <Button onClick={handlePlayPause} size="icon" className="w-12 h-12 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90" disabled={!src}>
