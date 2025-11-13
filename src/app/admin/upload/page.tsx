@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useFirestore } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Progress } from '@/components/ui/progress';
 import AudioRecorder from '@/components/AudioRecorder';
 import LiveMeetingForm from './LiveMeetingForm';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -54,6 +55,7 @@ export default function UploadPage() {
   const tab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tab || "article");
   const [activeVideoTab, setActiveVideoTab] = useState("youtube");
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -109,95 +111,148 @@ export default function UploadPage() {
 
   const onVideoSubmit: SubmitHandler<VideoFormValues> = async (data) => {
     if (!firestore) return;
-    
-    let videoUrl = data.youtubeUrl;
-    let youtubeUrl = data.youtubeUrl;
 
-    try {
-        if (data.videoFile) {
-            const storage = getStorage();
-            const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
-            const storageRef = ref(storage, fileName);
+    const videosCollection = collection(firestore, 'videos');
 
-            await uploadBytes(storageRef, data.videoFile);
-            videoUrl = await getDownloadURL(storageRef);
-            youtubeUrl = '';
-        }
-        
-        const videosCollection = collection(firestore, 'videos');
+    // Handle YouTube link submission
+    if (data.youtubeUrl && !data.videoFile) {
         const videoData = {
             title: data.title,
             description: data.description,
-            videoUrl: videoUrl,
-            youtubeUrl: youtubeUrl,
+            videoUrl: '',
+            youtubeUrl: data.youtubeUrl,
             thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`,
             category: 'General',
             duration: '00:00', // Placeholder
             createdAt: serverTimestamp(),
         };
-
-        await addDoc(videosCollection, videoData);
-        toast({ title: "Success", description: "Video added successfully!" });
-        videoForm.reset();
-
-    } catch (error: any) {
-        console.error("Video upload failed:", error);
-        if (error.code?.includes('storage/unauthorized')) {
-            toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
-        } else if (error.name === 'FirebaseError') {
-             const permissionError = new FirestorePermissionError({
-                path: 'videos',
-                operation: 'create',
-                requestResourceData: data,
+        addDoc(videosCollection, videoData)
+            .then(() => {
+                toast({ title: "Success", description: "Video link added successfully!" });
+                videoForm.reset();
+            })
+            .catch(error => {
+                const permissionError = new FirestorePermissionError({
+                    path: videosCollection.path,
+                    operation: 'create',
+                    requestResourceData: videoData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
             });
-            errorEmitter.emit('permission-error', permissionError);
-        }
-        else {
-            toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred during video upload." });
-        }
+        return;
+    }
+
+    // Handle direct file upload
+    if (data.videoFile) {
+        const storage = getStorage();
+        const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
+        const storageRef = ref(storage, fileName);
+        const uploadTask = uploadBytesResumable(storageRef, data.videoFile);
+
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                console.error("Video upload failed:", error);
+                setUploadProgress(null);
+                if (error.code?.includes('storage/unauthorized')) {
+                    toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload videos. Please check your Firebase Storage security rules." });
+                } else {
+                    toast({ variant: "destructive", title: "Error", description: "An unknown error occurred during video upload." });
+                }
+                 videoForm.formState.isSubmitting = false; // Manually reset form state on error
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    const videoData = {
+                        title: data.title,
+                        description: data.description,
+                        videoUrl: downloadURL,
+                        youtubeUrl: '',
+                        thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`,
+                        category: 'General',
+                        duration: '00:00', // Placeholder
+                        createdAt: serverTimestamp(),
+                    };
+
+                    addDoc(videosCollection, videoData)
+                        .then(() => {
+                            toast({ title: "Success", description: "Video uploaded successfully!" });
+                            videoForm.reset();
+                        })
+                        .catch(error => {
+                            const permissionError = new FirestorePermissionError({
+                                path: videosCollection.path,
+                                operation: 'create',
+                                requestResourceData: videoData,
+                            });
+                            errorEmitter.emit('permission-error', permissionError);
+                        })
+                        .finally(() => {
+                            setUploadProgress(null);
+                        });
+                });
+            }
+        );
     }
   };
 
   const onAudioSubmit: SubmitHandler<AudioFormValues> = async (data) => {
     if (!firestore) return;
 
-    try {
-      const storage = getStorage();
-      const fileName = `audio/${Date.now()}-${data.title.replace(/\s+/g, '-')}.webm`;
-      const storageRef = ref(storage, fileName);
+    const storage = getStorage();
+    const fileName = `audio/${Date.now()}-${data.title.replace(/\s+/g, '-')}.webm`;
+    const storageRef = ref(storage, fileName);
+    const uploadTask = uploadBytesResumable(storageRef, data.audioBlob, { contentType: 'audio/webm' });
 
-      await uploadBytes(storageRef, data.audioBlob, { contentType: 'audio/webm' });
-      const audioUrl = await getDownloadURL(storageRef);
-
-      const audiosCollection = collection(firestore, 'audios');
-      const audioData = {
-        title: data.title,
-        description: data.description,
-        audioUrl: audioUrl,
-        category: "Devotional",
-        duration: `${Math.floor(data.duration / 60)}:${String(Math.floor(data.duration % 60)).padStart(2, '0')}`,
-        createdAt: serverTimestamp(),
-      };
-      
-      await addDoc(audiosCollection, audioData);
-      toast({ title: "Success", description: "Audio uploaded successfully!" });
-      audioForm.reset();
-
-    } catch (error: any) {
-      console.error("Audio upload failed:", error);
-      if (error.code?.includes('storage/unauthorized')) {
-         toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload files. Please check your Firebase Storage security rules." });
-      } else if (error.name === 'FirebaseError') {
-           const permissionError = new FirestorePermissionError({
-            path: 'audios',
-            operation: 'create',
-            requestResourceData: data,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-      } else {
-         toast({ variant: "destructive", title: "Error", description: error.message || "An unknown error occurred during audio upload." });
-      }
-    }
+    uploadTask.on('state_changed',
+        (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(progress);
+        },
+        (error) => {
+            console.error("Audio upload failed:", error);
+            setUploadProgress(null);
+            if (error.code?.includes('storage/unauthorized')) {
+                toast({ variant: "destructive", title: "Storage Permission Error", description: "You do not have permission to upload audio files. Please check your Firebase Storage security rules." });
+            } else {
+                toast({ variant: "destructive", title: "Error", description: "An unknown error occurred during audio upload." });
+            }
+            audioForm.formState.isSubmitting = false; // Manually reset form state
+        },
+        () => {
+            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                const audiosCollection = collection(firestore, 'audios');
+                const audioData = {
+                    title: data.title,
+                    description: data.description,
+                    audioUrl: downloadURL,
+                    category: "Devotional",
+                    duration: `${Math.floor(data.duration / 60)}:${String(Math.floor(data.duration % 60)).padStart(2, '0')}`,
+                    createdAt: serverTimestamp(),
+                };
+                
+                addDoc(audiosCollection, audioData)
+                    .then(() => {
+                        toast({ title: "Success", description: "Audio uploaded successfully!" });
+                        audioForm.reset();
+                    })
+                    .catch(error => {
+                        const permissionError = new FirestorePermissionError({
+                            path: audiosCollection.path,
+                            operation: 'create',
+                            requestResourceData: audioData,
+                        });
+                        errorEmitter.emit('permission-error', permissionError);
+                    })
+                    .finally(() => {
+                       setUploadProgress(null);
+                    });
+            });
+        }
+    );
   };
 
 
@@ -315,6 +370,13 @@ export default function UploadPage() {
                       )} />
                     </TabsContent>
                   </Tabs>
+                   {uploadProgress !== null && activeTab === 'video' && (
+                    <div className="space-y-2">
+                        <Label>Upload Progress</Label>
+                        <Progress value={uploadProgress} />
+                        <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}%</p>
+                    </div>
+                   )}
                   <Button type="submit" className="w-full md:w-auto" disabled={videoForm.formState.isSubmitting}>
                     {videoForm.formState.isSubmitting ? 'Uploading...' : 'Add Video'}
                   </Button>
@@ -372,6 +434,13 @@ export default function UploadPage() {
                         <FormMessage />
                       </FormItem>
                    )} />
+                    {uploadProgress !== null && activeTab === 'audio' && (
+                        <div className="space-y-2">
+                            <Label>Upload Progress</Label>
+                            <Progress value={uploadProgress} />
+                             <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}%</p>
+                        </div>
+                    )}
                   <Button type="submit" className="w-full md:w-auto" disabled={audioForm.formState.isSubmitting}>
                      {audioForm.formState.isSubmitting ? "Uploading..." : "Upload Audio"}
                   </Button>
