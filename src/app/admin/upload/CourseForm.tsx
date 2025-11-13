@@ -15,7 +15,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { Progress } from '@/components/ui/progress';
 
 const lessonSchema = z.object({
   title: z.string().min(1, 'Lesson title is required'),
@@ -73,9 +72,8 @@ export default function CourseForm() {
     batch.set(courseDocRef, courseData);
 
     // 3. Create references and set data for each lesson in the subcollection
-    const lessonsCollectionRef = collection(courseDocRef, 'lessons');
     data.lessons.forEach((lesson, index) => {
-        const lessonDocRef = doc(lessonsCollectionRef); // New doc ref for the lesson
+        const lessonDocRef = doc(courseDocRef, 'lessons', (index + 1).toString());
         batch.set(lessonDocRef, {
           ...lesson,
           order: index + 1,
@@ -90,16 +88,22 @@ export default function CourseForm() {
       form.reset();
     } catch (error: any) {
       console.error('Error creating course with batch: ', error);
+      // Create and emit the detailed permission error
       const permissionError = new FirestorePermissionError({
           path: `courses/${courseDocRef.id}`, // Path for the main document
-          operation: 'create',
-          requestResourceData: data,
+          operation: 'create', // The batch write is a create operation
+          requestResourceData: {
+            course: courseData,
+            lessons: data.lessons,
+          }
       });
       errorEmitter.emit('permission-error', permissionError);
+
+      // Show a generic error toast to the user
       toast({
           variant: 'destructive',
-          title: 'Error creating course',
-          description: 'You may not have the required permissions.'
+          title: 'Error Creating Course',
+          description: 'You do not have the required permissions. Please check the console for details.'
       });
     } finally {
       setIsSubmitting(false);
