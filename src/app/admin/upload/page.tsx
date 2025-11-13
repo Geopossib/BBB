@@ -109,12 +109,12 @@ export default function UploadPage() {
       });
   };
 
-  const onVideoSubmit: SubmitHandler<VideoFormValues> = async (data) => {
+  const onVideoSubmit: SubmitHandler<VideoFormValues> = (data) => {
     if (!firestore) return;
 
     const videosCollection = collection(firestore, 'videos');
 
-    // Handle YouTube link submission
+    // Handle YouTube link submission (no upload required)
     if (data.youtubeUrl && !data.videoFile) {
         const videoData = {
             title: data.title,
@@ -148,6 +148,9 @@ export default function UploadPage() {
         const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
         const storageRef = ref(storage, fileName);
         const uploadTask = uploadBytesResumable(storageRef, data.videoFile);
+        
+        // Manually set submitting state
+        videoForm.formState.isSubmitting = true;
 
         uploadTask.on('state_changed',
             (snapshot) => {
@@ -162,7 +165,8 @@ export default function UploadPage() {
                 } else {
                     toast({ variant: "destructive", title: "Error", description: "An unknown error occurred during video upload." });
                 }
-                 videoForm.formState.isSubmitting = false; // Manually reset form state on error
+                 videoForm.formState.isSubmitting = false;
+                 videoForm.reset(); // Also reset form on error
             },
             () => {
                 getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
@@ -180,7 +184,6 @@ export default function UploadPage() {
                     addDoc(videosCollection, videoData)
                         .then(() => {
                             toast({ title: "Success", description: "Video uploaded successfully!" });
-                            videoForm.reset();
                         })
                         .catch(error => {
                             const permissionError = new FirestorePermissionError({
@@ -192,6 +195,8 @@ export default function UploadPage() {
                         })
                         .finally(() => {
                             setUploadProgress(null);
+                            videoForm.formState.isSubmitting = false;
+                            videoForm.reset();
                         });
                 });
             }
@@ -199,13 +204,16 @@ export default function UploadPage() {
     }
   };
 
-  const onAudioSubmit: SubmitHandler<AudioFormValues> = async (data) => {
+  const onAudioSubmit: SubmitHandler<AudioFormValues> = (data) => {
     if (!firestore) return;
 
     const storage = getStorage();
     const fileName = `audio/${Date.now()}-${data.title.replace(/\s+/g, '-')}.webm`;
     const storageRef = ref(storage, fileName);
     const uploadTask = uploadBytesResumable(storageRef, data.audioBlob, { contentType: 'audio/webm' });
+    
+    // Manually set submitting state
+    audioForm.formState.isSubmitting = true;
 
     uploadTask.on('state_changed',
         (snapshot) => {
@@ -220,7 +228,8 @@ export default function UploadPage() {
             } else {
                 toast({ variant: "destructive", title: "Error", description: "An unknown error occurred during audio upload." });
             }
-            audioForm.formState.isSubmitting = false; // Manually reset form state
+            audioForm.formState.isSubmitting = false;
+            audioForm.reset();
         },
         () => {
             getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
@@ -237,7 +246,6 @@ export default function UploadPage() {
                 addDoc(audiosCollection, audioData)
                     .then(() => {
                         toast({ title: "Success", description: "Audio uploaded successfully!" });
-                        audioForm.reset();
                     })
                     .catch(error => {
                         const permissionError = new FirestorePermissionError({
@@ -249,6 +257,8 @@ export default function UploadPage() {
                     })
                     .finally(() => {
                        setUploadProgress(null);
+                       audioForm.formState.isSubmitting = false;
+                       audioForm.reset();
                     });
             });
         }
