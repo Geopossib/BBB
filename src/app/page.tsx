@@ -65,7 +65,7 @@ export default function Home() {
       <section className="relative bg-background text-primary-foreground py-20 md:py-32 flex items-center justify-center">
         <div className="absolute inset-0">
             <Image
-                src="https://images.unsplash.com/photo-1545156521-39a583e2051f?q=80&w=2070&auto=format&fit=crop"
+                src="https://i.ibb.co/1fWJp1f/hero-background.jpg"
                 alt="Connecting the world through faith"
                 fill
                 className="object-cover"
@@ -93,7 +93,7 @@ export default function Home() {
             <h2 className="text-3xl font-headline font-bold">Latest Videos</h2>
             <Button variant="link" asChild className="text-accent-foreground">
               <Link href="/videos">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
-            </Button>.
+            </Button>
           </div>
           {loading ? <LoadingSkeleton /> : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
