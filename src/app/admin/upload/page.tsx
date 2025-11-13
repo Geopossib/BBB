@@ -111,6 +111,7 @@ export default function UploadPage() {
     if (!firestore) return;
     
     let videoUrl = data.youtubeUrl;
+    let youtubeUrl = data.youtubeUrl;
 
     try {
         if (data.videoFile) {
@@ -120,6 +121,7 @@ export default function UploadPage() {
 
             await uploadBytes(storageRef, data.videoFile);
             videoUrl = await getDownloadURL(storageRef);
+            youtubeUrl = '';
         }
         
         const videosCollection = collection(firestore, 'videos');
@@ -127,6 +129,7 @@ export default function UploadPage() {
             title: data.title,
             description: data.description,
             videoUrl: videoUrl,
+            youtubeUrl: youtubeUrl,
             thumbnailId: `video-thumb-${Math.floor(Math.random() * 3) + 1}`,
             category: 'General',
             duration: '00:00', // Placeholder
