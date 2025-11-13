@@ -148,9 +148,6 @@ export default function UploadPage() {
         const fileName = `videos/${Date.now()}-${data.videoFile.name}`;
         const storageRef = ref(storage, fileName);
         const uploadTask = uploadBytesResumable(storageRef, data.videoFile);
-        
-        // Manually set submitting state
-        videoForm.formState.isSubmitting = true;
 
         uploadTask.on('state_changed',
             (snapshot) => {
@@ -165,7 +162,6 @@ export default function UploadPage() {
                 } else {
                     toast({ variant: "destructive", title: "Error", description: "An unknown error occurred during video upload." });
                 }
-                 videoForm.formState.isSubmitting = false;
                  videoForm.reset(); // Also reset form on error
             },
             () => {
@@ -195,7 +191,6 @@ export default function UploadPage() {
                         })
                         .finally(() => {
                             setUploadProgress(null);
-                            videoForm.formState.isSubmitting = false;
                             videoForm.reset();
                         });
                 });
@@ -212,9 +207,6 @@ export default function UploadPage() {
     const storageRef = ref(storage, fileName);
     const uploadTask = uploadBytesResumable(storageRef, data.audioBlob, { contentType: 'audio/webm' });
     
-    // Manually set submitting state
-    audioForm.formState.isSubmitting = true;
-
     uploadTask.on('state_changed',
         (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
@@ -228,7 +220,6 @@ export default function UploadPage() {
             } else {
                 toast({ variant: "destructive", title: "Error", description: "An unknown error occurred during audio upload." });
             }
-            audioForm.formState.isSubmitting = false;
             audioForm.reset();
         },
         () => {
@@ -257,7 +248,6 @@ export default function UploadPage() {
                     })
                     .finally(() => {
                        setUploadProgress(null);
-                       audioForm.formState.isSubmitting = false;
                        audioForm.reset();
                     });
             });
@@ -387,8 +377,8 @@ export default function UploadPage() {
                         <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}%</p>
                     </div>
                    )}
-                  <Button type="submit" className="w-full md:w-auto" disabled={videoForm.formState.isSubmitting}>
-                    {videoForm.formState.isSubmitting ? 'Uploading...' : 'Add Video'}
+                  <Button type="submit" className="w-full md:w-auto" disabled={uploadProgress !== null}>
+                    {uploadProgress !== null ? 'Uploading...' : 'Add Video'}
                   </Button>
                 </form>
               </Form>
@@ -451,8 +441,8 @@ export default function UploadPage() {
                              <p className="text-sm text-muted-foreground text-center">{Math.round(uploadProgress)}%</p>
                         </div>
                     )}
-                  <Button type="submit" className="w-full md:w-auto" disabled={audioForm.formState.isSubmitting}>
-                     {audioForm.formState.isSubmitting ? "Uploading..." : "Upload Audio"}
+                  <Button type="submit" className="w-full md:w-auto" disabled={uploadProgress !== null}>
+                     {uploadProgress !== null ? "Uploading..." : "Upload Audio"}
                   </Button>
                 </form>
               </Form>
