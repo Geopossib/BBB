@@ -19,23 +19,30 @@ type ArticlePageProps = {
 export default function ArticlePage({ params }: ArticlePageProps) {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
+  const { slug } = params;
 
   useEffect(() => {
+    // This function is defined inside useEffect to capture the `slug` from the effect's scope.
     async function loadArticle() {
+      setLoading(true);
       try {
-        const fetchedArticle = await getArticleBySlug(params.slug);
+        const fetchedArticle = await getArticleBySlug(slug);
         if (!fetchedArticle) {
           notFound();
         }
         setArticle(fetchedArticle);
       } catch (error) {
         console.error("Error fetching article:", error);
+        setArticle(null); // Ensure no stale data is shown on error
       } finally {
         setLoading(false);
       }
     }
-    loadArticle();
-  }, [params.slug]);
+
+    if (slug) {
+      loadArticle();
+    }
+  }, [slug]); // The effect depends only on the `slug` string.
 
   if (loading) {
     return (
@@ -62,7 +69,9 @@ export default function ArticlePage({ params }: ArticlePageProps) {
   }
 
   if (!article) {
-    return null; // Or some other not found component
+    // This can happen if the fetch fails or if the article is not found initially.
+    // notFound() is called inside useEffect, so this part handles the rendering before the redirect happens.
+    return null;
   }
 
   const imageUrl = PlaceHolderImages.find((img) => img.id === article.imageId)?.imageUrl || 'https://picsum.photos/seed/placeholder/1200/800';
