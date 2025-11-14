@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { LayoutDashboard, Settings, Video, PlusSquare } from 'lucide-react';
@@ -42,9 +43,9 @@ export default function AdminLayout({
     // If auth is still loading, do nothing.
     if (isUserLoading) return;
 
-    // If there's no user, redirect to the login page.
+    // If there's no user, redirect to the admin login page.
     if (!user) {
-      router.push('/login');
+      router.push('/admin/login');
     }
   }, [user, isUserLoading, router]);
 

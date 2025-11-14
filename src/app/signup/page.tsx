@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth, useUser, initiateGoogleSignIn, initiateEmailSignUp } from '@/firebase';
+import { useAuth, initiateGoogleSignIn, initiateEmailSignUp } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 const signupSchema = z.object({
@@ -24,7 +25,6 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -38,12 +38,6 @@ export default function SignupPage() {
     },
   });
 
-  useEffect(() => {
-    if (user && !user.isAnonymous) {
-      router.push('/admin');
-    }
-  }, [user, router]);
-
   const handleGoogleSignIn = () => {
     if (auth) {
       initiateGoogleSignIn(auth);
@@ -55,7 +49,7 @@ export default function SignupPage() {
       initiateEmailSignUp(auth, data.email, data.password)
         .then(() => {
            toast({ title: 'Success', description: 'Account created successfully!' });
-           // The useEffect will handle the redirect
+           router.push('/'); // Redirect to homepage on successful signup
         })
         .catch((error) => {
             let description = "An unexpected error occurred.";

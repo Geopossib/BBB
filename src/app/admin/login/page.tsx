@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth, initiateGoogleSignIn, initiateEmailSignIn } from '@/firebase';
+import { useAuth, useUser, initiateGoogleSignIn, initiateEmailSignIn } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
@@ -21,8 +21,9 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -33,7 +34,14 @@ export default function LoginPage() {
       password: '',
     },
   });
-  
+
+  useEffect(() => {
+    // If user is logged in, redirect them to the admin dashboard.
+    if (!isUserLoading && user) {
+      router.push('/admin');
+    }
+  }, [user, isUserLoading, router]);
+
   const handleGoogleSignIn = () => {
     if (auth) {
       initiateGoogleSignIn(auth);
@@ -45,7 +53,7 @@ export default function LoginPage() {
       initiateEmailSignIn(auth, data.email, data.password)
         .then(() => {
           toast({ title: 'Success', description: 'Logged in successfully!' });
-          router.push('/'); // Redirect to homepage on successful login
+          // The useEffect will handle the redirect
         })
         .catch((error) => {
           let description = "An unexpected error occurred.";
@@ -61,14 +69,13 @@ export default function LoginPage() {
     }
   };
 
-
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] py-12">
+    <div className="flex items-center justify-center min-h-screen bg-secondary">
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline">Login</CardTitle>
+          <CardTitle className="text-2xl font-headline">Admin Login</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your credentials to access the admin panel.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -81,7 +88,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="m@example.com" {...field} />
+                      <Input type="email" placeholder="admin@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -94,9 +101,6 @@ export default function LoginPage() {
                   <FormItem>
                      <div className="flex items-center">
                         <FormLabel>Password</FormLabel>
-                        <Link href="#" className="ml-auto inline-block text-sm underline">
-                        Forgot your password?
-                        </Link>
                     </div>
                     <FormControl>
                       <Input type="password" {...field} />
@@ -105,7 +109,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Logging in...' : 'Login'}
               </Button>
               <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} type="button">
@@ -113,12 +117,6 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="underline">
-              Sign up
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>
