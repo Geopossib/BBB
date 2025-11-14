@@ -1,10 +1,32 @@
+'use client';
+
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth, useUser, initiateGoogleSignIn } from '@/firebase';
 
 export default function SignupPage() {
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If user is logged in (not anonymously), redirect them.
+    if (user && !user.isAnonymous && !isUserLoading) {
+      router.push('/admin');
+    }
+  }, [user, isUserLoading, router]);
+  
+  const handleGoogleSignIn = () => {
+    if (auth) {
+      initiateGoogleSignIn(auth);
+    }
+  };
+  
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] py-12">
        <Card className="mx-auto max-w-sm w-full">
@@ -42,7 +64,7 @@ export default function SignupPage() {
             <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
               Create an account
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
               Sign up with Google
             </Button>
           </div>

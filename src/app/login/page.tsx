@@ -2,23 +2,31 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
+import { useAuth, useUser, initiateAnonymousSignIn, initiateGoogleSignIn } from '@/firebase';
 
 export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
-    // If user is not logged in and not loading, sign them in anonymously
-    if (!user && !isUserLoading && auth) {
-      initiateAnonymousSignIn(auth);
+    // If user is logged in (not anonymously), redirect them.
+    if (user && !user.isAnonymous && !isUserLoading) {
+      router.push('/admin');
     }
-  }, [user, isUserLoading, auth]);
+  }, [user, isUserLoading, router]);
   
+  const handleGoogleSignIn = () => {
+    if (auth) {
+      initiateGoogleSignIn(auth);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] py-12">
       <Card className="mx-auto max-w-sm w-full">
@@ -51,7 +59,7 @@ export default function LoginPage() {
             <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
               Login
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
               Login with Google
             </Button>
           </div>
