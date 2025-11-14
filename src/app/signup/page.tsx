@@ -16,7 +16,7 @@ export default function SignupPage() {
 
   useEffect(() => {
     // If user is logged in (not anonymously), redirect them.
-    if (user && !user.isAnonymous && !isUserLoading) {
+    if (user && !user.isAnonymous) {
       router.push('/admin');
     }
   }, [user, isUserLoading, router]);

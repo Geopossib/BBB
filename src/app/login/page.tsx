@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useUser, initiateAnonymousSignIn, initiateGoogleSignIn } from '@/firebase';
+import { useAuth, useUser, initiateGoogleSignIn } from '@/firebase';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -16,7 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     // If user is logged in (not anonymously), redirect them.
-    if (user && !user.isAnonymous && !isUserLoading) {
+    if (user && !user.isAnonymous) {
       router.push('/admin');
     }
   }, [user, isUserLoading, router]);
