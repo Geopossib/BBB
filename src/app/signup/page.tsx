@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth, initiateGoogleSignIn, initiateEmailSignUp } from '@/firebase';
+import { useAuth, initiateGoogleSignIn, initiateEmailSignUp, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 const signupSchema = z.object({
@@ -27,6 +27,8 @@ export default function SignupPage() {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -37,6 +39,13 @@ export default function SignupPage() {
       password: '',
     },
   });
+
+  useEffect(() => {
+    // If user is logged in (and not anonymous), redirect them to the homepage.
+    if (!isUserLoading && user && !user.isAnonymous) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleGoogleSignIn = () => {
     if (auth) {

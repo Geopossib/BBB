@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
   });
 
   useEffect(() => {
-    // If user is logged in, redirect them to the admin dashboard.
+    // If user is logged in (and not anonymous), redirect them to the admin dashboard.
     if (!isUserLoading && user) {
       router.push('/admin');
     }
