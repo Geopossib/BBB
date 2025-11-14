@@ -14,8 +14,8 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { BsnConnectLogo } from '@/components/icons';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
 import { useEffect } from 'react';
 
 const navItems = [
@@ -33,17 +33,20 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const activeTab = searchParams.get('tab');
 
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // If user is not logged in and not loading, sign them in anonymously
-    if (!user && !isUserLoading && auth) {
-      initiateAnonymousSignIn(auth);
+    // If auth is still loading, do nothing.
+    if (isUserLoading) return;
+
+    // If there's no user, redirect to the login page.
+    if (!user) {
+      router.push('/login');
     }
-  }, [user, isUserLoading, auth]);
+  }, [user, isUserLoading, router]);
 
   const isActive = (href: string) => {
     if (href.includes('?tab=')) {
@@ -54,6 +57,15 @@ export default function AdminLayout({
         return false;
     }
     return pathname === href;
+  }
+
+  // Render a loading state or null while checking for user to prevent flicker
+  if (isUserLoading || !user) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <div className="text-muted-foreground">Loading Admin...</div>
+        </div>
+    );
   }
 
   return (
