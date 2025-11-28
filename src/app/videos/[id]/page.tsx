@@ -2,12 +2,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getVideoById, Video } from '@/lib/data';
+import { getVideoById, getVideos, Video } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Clock } from 'lucide-react';
+import { Clock, PlayCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import Link from 'next/link';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type VideoPageProps = {
   params: {
@@ -22,59 +24,40 @@ function getYoutubeVideoId(url: string): string | null {
     return (match && match[2].length === 11) ? match[2] : null;
 }
 
-
 export default function VideoPage({ params }: VideoPageProps) {
   const [video, setVideo] = useState<Video | null>(null);
+  const [allVideos, setAllVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadVideo() {
+    async function loadVideoData() {
+      setLoading(true);
       try {
-        const fetchedVideo = await getVideoById(params.id);
+        const [fetchedVideo, fetchedAllVideos] = await Promise.all([
+          getVideoById(params.id),
+          getVideos({ limit: 10 }) // Fetch up to 10 other videos
+        ]);
+
         if (!fetchedVideo) {
           notFound();
         }
         setVideo(fetchedVideo);
+        setAllVideos(fetchedAllVideos.filter(v => v.id !== params.id)); // Exclude current video
       } catch (error) {
-        console.error("Error fetching video:", error);
+        console.error("Error fetching video data:", error);
       } finally {
         setLoading(false);
       }
     }
-    loadVideo();
+    loadVideoData();
   }, [params.id]);
 
-
-  if (loading) {
-    return (
-        <div className="container mx-auto px-4 py-12">
-            <div className="flex flex-col lg:flex-row gap-8">
-                <div className="lg:w-2/3 w-full">
-                    <Skeleton className="aspect-video w-full mb-4 rounded-lg" />
-                     <div className="bg-card border rounded-lg p-6">
-                        <Skeleton className="h-5 w-24 mb-4" />
-                        <Skeleton className="h-8 w-3/4 mb-4" />
-                        <Skeleton className="h-5 w-full" />
-                     </div>
-                </div>
-                 <div className="lg:w-1/3 w-full">
-                    <h2 className="text-2xl font-headline font-bold mb-4">More Videos</h2>
-                    <div className="space-y-4">
-                        <Skeleton className="h-20 w-full" />
-                        <Skeleton className="h-20 w-full" />
-                        <Skeleton className="h-20 w-full" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-  }
-
-  if (!video) {
-    return null; // Or some other not found component
-  }
+  const getImage = (id: string) => {
+    return PlaceHolderImages.find((img) => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/400/225`;
+  };
 
   const renderVideoPlayer = () => {
+    if (!video) return null;
     if (video.youtubeUrl) {
        const videoId = getYoutubeVideoId(video.youtubeUrl);
        if (!videoId) {
@@ -95,9 +78,44 @@ export default function VideoPage({ params }: VideoPageProps) {
     return <div className="w-full h-full rounded-lg shadow-xl bg-muted flex items-center justify-center"><p>Video source not available.</p></div>
   }
 
+  if (loading) {
+    return (
+        <div className="container mx-auto px-4 py-12">
+            <div className="flex flex-col lg:flex-row gap-8">
+                <div className="lg:w-2/3 w-full">
+                    <Skeleton className="aspect-video w-full mb-4 rounded-lg" />
+                     <div className="bg-card border rounded-lg p-6">
+                        <Skeleton className="h-5 w-24 mb-4" />
+                        <Skeleton className="h-8 w-3/4 mb-4" />
+                        <Skeleton className="h-5 w-full" />
+                     </div>
+                </div>
+                 <div className="lg:w-1/3 w-full">
+                    <h2 className="text-2xl font-headline font-bold mb-4">More Videos</h2>
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                           <div key={i} className="flex items-center gap-4">
+                                <Skeleton className="h-20 w-32 rounded-md" />
+                                <div className="space-y-2 flex-1">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-3/4" />
+                                </div>
+                           </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+  }
+
+  if (!video) {
+    return null; // Or some other not found component
+  }
+
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
         <div className="lg:w-2/3 w-full">
           <div className="aspect-video w-full mb-4">
             {renderVideoPlayer()}
@@ -116,8 +134,31 @@ export default function VideoPage({ params }: VideoPageProps) {
         </div>
         <div className="lg:w-1/3 w-full">
             <h2 className="text-2xl font-headline font-bold mb-4">More Videos</h2>
-            {/* Here you could map over other videos to create a playlist */}
-            <p className="text-muted-foreground">More videos coming soon.</p>
+            <div className="space-y-4">
+                {allVideos.length > 0 ? (
+                    allVideos.map(nextVideo => (
+                        <Link href={`/videos/${nextVideo.id}`} key={nextVideo.id} className="group flex items-center gap-4 p-2 rounded-lg hover:bg-secondary transition-colors">
+                            <div className="relative w-32 h-20 rounded-md overflow-hidden shrink-0">
+                                <Image
+                                    src={getImage(nextVideo.thumbnailId)}
+                                    alt={nextVideo.title}
+                                    fill
+                                    className="object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                    <PlayCircle className="h-8 w-8 text-white/80 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-semibold text-sm line-clamp-2">{nextVideo.title}</p>
+                                <p className="text-xs text-muted-foreground">{nextVideo.category}</p>
+                            </div>
+                        </Link>
+                    ))
+                ) : (
+                    <p className="text-muted-foreground">No other videos available at the moment.</p>
+                )}
+            </div>
         </div>
       </div>
     </div>
