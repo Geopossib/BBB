@@ -25,7 +25,6 @@ const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/blog', label: 'Articles', icon: BookOpen },
   { href: '/videos', label: 'Videos', icon: Film },
-  { href: '/courses', label: 'Courses', icon: GraduationCap },
   { href: '/live-meetings', label: 'Live Meetings', icon: Video },
   { href: '/about', label: 'About Us', icon: Users },
 ];
