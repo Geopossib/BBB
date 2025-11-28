@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Sparkles, BookOpen, Video, Users, ArrowRight, Heart, Mail } from 'lucide-react';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError, useUser } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +22,7 @@ type NewsletterFormValues = z.infer<typeof newsletterSchema>;
 
 export default function LandingPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const form = useForm<NewsletterFormValues>({
@@ -90,7 +91,7 @@ export default function LandingPage() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="text-lg px-10 py-7 border-2">
-              <Link href="/login">I Already Have an Account</Link>
+              <Link href={user ? "/dashboard" : "/login"}>I Already Have an Account</Link>
             </Button>
           </div>
         </div>
