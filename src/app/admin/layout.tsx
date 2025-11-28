@@ -42,16 +42,19 @@ export default function AdminLayout({
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
+    // Wait until the authentication check is complete.
     if (isUserLoading) {
-      // Still checking authentication, do nothing yet.
       return;
     }
 
+    // If there is no user, redirect to the admin login page.
     if (!user) {
-      // If there's no user after loading, redirect to admin login.
       router.push('/admin/login');
-    } else if (user.email !== AUTHORIZED_EMAIL) {
-      // If there is a user but they are not the authorized admin, redirect to homepage.
+      return;
+    }
+
+    // If the user's email does not match the authorized email, redirect to the homepage.
+    if (user.email !== AUTHORIZED_EMAIL) {
       router.push('/');
     }
   }, [user, isUserLoading, router]);
@@ -67,8 +70,8 @@ export default function AdminLayout({
     return pathname === href;
   }
 
-  // While loading or if user is not authorized, show a loading/verification screen.
-  // This prevents content from flashing before the redirect happens.
+  // While loading, or if the user is not authenticated and authorized, show a verification screen.
+  // This prevents the admin content from flashing before the redirect logic in useEffect completes.
   if (isUserLoading || !user || user.email !== AUTHORIZED_EMAIL) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -80,6 +83,7 @@ export default function AdminLayout({
     );
   }
 
+  // If the user is authenticated and authorized, render the admin layout.
   return (
      <SidebarProvider>
       <Sidebar>
