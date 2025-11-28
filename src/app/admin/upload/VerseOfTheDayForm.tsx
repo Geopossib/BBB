@@ -35,7 +35,7 @@ export default function VerseOfTheDayForm() {
   });
 
   const verseDocRef = firestore ? doc(firestore, 'verseOfTheDay', 'current') : null;
-  const { data: currentVerse, isLoading } = useDoc<VerseFormValues>(verseDocRef);
+  const { data: currentVerse, isLoading } = useDoc(verseDocRef);
 
   useEffect(() => {
     if (currentVerse) {
@@ -44,7 +44,7 @@ export default function VerseOfTheDayForm() {
         reference: currentVerse.reference,
       });
     }
-  }, [currentVerse, form]);
+  }, [currentVerse, form.reset]);
 
 
   const onSubmit: SubmitHandler<VerseFormValues> = (data) => {
