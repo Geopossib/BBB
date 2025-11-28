@@ -9,6 +9,8 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Calendar, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 type ArticlePageProps = {
   params: {
@@ -20,9 +22,10 @@ export default function ArticlePage({ params }: ArticlePageProps) {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const { slug } = params;
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   useEffect(() => {
-    // This function is defined inside useEffect to capture the `slug` from the effect's scope.
     async function loadArticle() {
       setLoading(true);
       try {
@@ -33,7 +36,7 @@ export default function ArticlePage({ params }: ArticlePageProps) {
         setArticle(fetchedArticle);
       } catch (error) {
         console.error("Error fetching article:", error);
-        setArticle(null); // Ensure no stale data is shown on error
+        setArticle(null);
       } finally {
         setLoading(false);
       }
@@ -42,7 +45,21 @@ export default function ArticlePage({ params }: ArticlePageProps) {
     if (slug) {
       loadArticle();
     }
-  }, [slug]); // The effect depends only on the `slug` string.
+  }, [slug]);
+
+  useEffect(() => {
+    // When the article has loaded and the user is logged in, record the view.
+    if (article && user && firestore) {
+      const readArticleRef = doc(firestore, 'users', user.uid, 'readArticles', article.id);
+      // Use setDoc with merge to create or update without overwriting,
+      // and to avoid writing the same data repeatedly.
+      setDoc(readArticleRef, { 
+        articleId: article.id,
+        readAt: serverTimestamp(),
+        title: article.title, // Storing title for potential future use
+      }, { merge: true });
+    }
+  }, [article, user, firestore]);
 
   if (loading) {
     return (
@@ -69,8 +86,6 @@ export default function ArticlePage({ params }: ArticlePageProps) {
   }
 
   if (!article) {
-    // This can happen if the fetch fails or if the article is not found initially.
-    // notFound() is called inside useEffect, so this part handles the rendering before the redirect happens.
     return null;
   }
 

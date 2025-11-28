@@ -1,5 +1,27 @@
+
 {
   "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's public profile and settings.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "format": "uri", "description": "URL of the user's profile picture." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ReadArticle": {
+      "title": "Read Article",
+      "description": "A record indicating that a user has read a specific article.",
+      "type": "object",
+      "properties": {
+        "articleId": { "type": "string", "description": "The ID of the article that was read." },
+        "readAt": { "type": "string", "format": "date-time", "description": "The timestamp when the article was read." },
+        "title": { "type": "string", "description": "The title of the article that was read." }
+      },
+      "required": ["articleId", "readAt", "title"]
+    },
     "Article": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Article",
@@ -110,12 +132,17 @@
       "liveMeetings": { "$ref": "#/entities/LiveMeeting", "description": "Stores information about live meeting sessions." },
       "courses": { "$ref": "#/entities/Course", "description": "Stores course overview information." },
       "prayerRequests": { "$ref": "#/entities/PrayerRequest", "description": "Stores prayer and counselling requests from users." },
-      "subscribers": { "$ref": "#/entities/Subscriber", "description": "Stores newsletter subscribers' emails." }
+      "subscribers": { "$ref": "#/entities/Subscriber", "description": "Stores newsletter subscribers' emails." },
+      "users": { "$ref": "#/entities/UserProfile", "description": "Stores public user profile information." }
     },
     "subcollections": {
       "/courses/{courseId}/lessons/{lessonId}": {
         "schema": { "$ref": "#/entities/Lesson" },
         "description": "Stores the individual lessons for a specific course."
+      },
+      "/users/{userId}/readArticles/{articleId}": {
+        "schema": { "$ref": "#/entities/ReadArticle" },
+        "description": "Stores records of articles read by a user."
       }
     }
   }

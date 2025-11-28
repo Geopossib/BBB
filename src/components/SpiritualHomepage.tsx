@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,13 +6,15 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getArticles, getVideos } from "@/lib/data";
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, Video, Heart, Users, Sparkles, Quote, ArrowRight, Calendar, Church, Flame, MessageCircle } from 'lucide-react';
+import { BookOpen, Video, Heart, Users, Sparkles, Quote, ArrowRight, Calendar, MessageCircle } from 'lucide-react';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function SpiritualHomepage() {
-  const [stats, setStats] = useState({ articles: 0, videos: 0 });
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const [readArticlesCount, setReadArticlesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const dailyVerses = [
@@ -24,13 +27,24 @@ export default function SpiritualHomepage() {
   const verse = dailyVerses[new Date().getDate() % dailyVerses.length];
 
   useEffect(() => {
-    async function load() {
-      // This is a placeholder for loading actual user stats in the future.
-      // For now, we are keeping them at 0.
-      setLoading(false); 
+    async function loadUserStats() {
+      if (!user || !firestore) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const readArticlesRef = collection(firestore, 'users', user.uid, 'readArticles');
+        const snapshot = await getDocs(readArticlesRef);
+        setReadArticlesCount(snapshot.size);
+      } catch (error) {
+        console.error("Error fetching user stats:", error);
+      } finally {
+        setLoading(false);
+      }
     }
-    load();
-  }, []);
+    loadUserStats();
+  }, [user, firestore]);
 
   const StatCard = ({ title, value, icon, gradient }: any) => (
     <Card className="group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
@@ -43,7 +57,7 @@ export default function SpiritualHomepage() {
         {loading ? <Skeleton className="h-12 w-24 bg-white/30" /> : 
           <div className="text-4xl font-bold text-white">{value.toLocaleString()}</div>
         }
-        <p className="text-white/80 text-sm mt-1">Total Resources</p>
+        <p className="text-white/80 text-sm mt-1">Total Tracked</p>
       </CardContent>
     </Card>
   );
@@ -80,7 +94,7 @@ export default function SpiritualHomepage() {
       {/* Stats */}
       <section className="relative -mt-20 container mx-auto px-6 z-20">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Articles Read" value={0} icon={<BookOpen className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-purple-600 to-pink-600" />
+          <StatCard title="Articles Read" value={readArticlesCount} icon={<BookOpen className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-purple-600 to-pink-600" />
           <StatCard title="Videos Watched" value={0} icon={<Video className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-blue-600 to-cyan-600" />
           <StatCard title="Souls Encouraged" value={0} icon={<Heart className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-red-600 to-pink-600" />
           <StatCard title="Faith Family" value={0} icon={<Users className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-green-600 to-emerald-600" />

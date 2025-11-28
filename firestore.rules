@@ -1,3 +1,4 @@
+
 /**
  * @file Firestore Security Rules
  * @description This ruleset enforces a public read, admin-write model for all content collections.
@@ -117,6 +118,29 @@ service cloud.firestore {
          */
         allow update, delete: if false;
     }
+
+    /**
+     * @description Manages access to user-specific data.
+     * @path /databases/{database}/documents/users/{userId}
+     */
+    match /users/{userId} {
+      /**
+       * @description Allows a user to read and write to their own profile document.
+       * @allow (get, write) Authenticated users can manage their own profile.
+       */
+      allow get, write: if isOwner(userId);
+
+      /**
+       * @description Manages user's reading history.
+       * @path /databases/{database}/documents/users/{userId}/readArticles/{articleId}
+       */
+      match /readArticles/{articleId} {
+        /**
+         * @allow (get, list, write) Authenticated users can read and write to their own reading history.
+         */
+        allow get, list, write: if isOwner(userId);
+      }
+    }
     
     /**
      * @description Helper function to check if a user is signed in.
@@ -124,6 +148,15 @@ service cloud.firestore {
      */
     function isSignedIn() {
       return request.auth != null;
+    }
+    
+    /**
+     * @description Helper function to check if the requesting user is the owner of the document.
+     * @param {string} userId The ID of the user who owns the document.
+     * @returns {boolean} True if the requester's UID matches the userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
   }
 }
