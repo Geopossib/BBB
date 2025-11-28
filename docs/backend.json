@@ -120,6 +120,17 @@
             "subscribedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the user subscribed." }
         },
         "required": ["email", "subscribedAt"]
+    },
+    "VerseOfTheDay": {
+      "title": "Verse of the Day",
+      "description": "Stores the current verse of the day to be displayed on the dashboard.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "description": "The text of the bible verse." },
+        "reference": { "type": "string", "description": "The bible reference for the verse (e.g., John 3:16)." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last update." }
+      },
+      "required": ["text", "reference", "updatedAt"]
     }
   },
   "auth": {
@@ -133,7 +144,8 @@
       "courses": { "$ref": "#/entities/Course", "description": "Stores course overview information." },
       "prayerRequests": { "$ref": "#/entities/PrayerRequest", "description": "Stores prayer and counselling requests from users." },
       "subscribers": { "$ref": "#/entities/Subscriber", "description": "Stores newsletter subscribers' emails." },
-      "users": { "$ref": "#/entities/UserProfile", "description": "Stores public user profile information." }
+      "users": { "$ref": "#/entities/UserProfile", "description": "Stores public user profile information." },
+      "verseOfTheDay": { "$ref": "#/entities/VerseOfTheDay", "description": "Stores the current verse of the day." }
     },
     "subcollections": {
       "/courses/{courseId}/lessons/{lessonId}": {
@@ -147,3 +159,5 @@
     }
   }
 }
+
+    

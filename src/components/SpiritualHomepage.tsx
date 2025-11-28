@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, Video, Heart, Users, Sparkles, Quote, ArrowRight, Calendar, MessageCircle } from 'lucide-react';
-import { useUser, useFirestore } from '@/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc } from '@/firebase';
+import { collection, getDocs, doc } from 'firebase/firestore';
+
+const defaultVerse = {
+    text: "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
+    reference: "John 3:16"
+};
 
 export default function SpiritualHomepage() {
   const { user } = useUser();
@@ -17,14 +22,11 @@ export default function SpiritualHomepage() {
   const [readArticlesCount, setReadArticlesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const dailyVerses = [
-    { text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", reference: "Jeremiah 29:11" },
-    { text: "The Lord is my light and my salvation—whom shall I fear?", reference: "Psalm 27:1" },
-    { text: "Peace I leave with you; my peace I give you.", reference: "John 14:27" },
-    { text: "Cast all your anxiety on him because he cares for you.", reference: "1 Peter 5:7" },
-    { text: "The joy of the Lord is your strength.", reference: "Nehemiah 8:10" },
-  ];
-  const verse = dailyVerses[new Date().getDate() % dailyVerses.length];
+  const verseDocRef = firestore ? doc(firestore, 'verseOfTheDay', 'current') : null;
+  const { data: verseData, isLoading: isVerseLoading } = useDoc(verseDocRef);
+
+  const verse = verseData ? { text: verseData.text, reference: verseData.reference } : defaultVerse;
+
 
   useEffect(() => {
     async function loadUserStats() {
@@ -75,8 +77,18 @@ export default function SpiritualHomepage() {
           </Badge>
           <div className="max-w-5xl mx-auto">
             <Quote className="w-16 h-16 mx-auto mb-8 text-yellow-300 opacity-70" />
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight font-serif">{verse.text}</h1>
-            <p className="mt-8 text-2xl md:text-3xl text-yellow-200 font-medium">— {verse.reference} —</p>
+            {isVerseLoading ? (
+                 <div className='space-y-4'>
+                    <Skeleton className="h-16 w-full bg-white/20"/>
+                    <Skeleton className="h-16 w-3/4 mx-auto bg-white/20"/>
+                    <Skeleton className="h-8 w-1/4 mx-auto bg-white/20 mt-4"/>
+                </div>
+            ) : (
+                <>
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight font-serif">{verse.text}</h1>
+                    <p className="mt-8 text-2xl md:text-3xl text-yellow-200 font-medium">— {verse.reference} —</p>
+                </>
+            )}
           </div>
           <div className="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
             <Button asChild size="lg" className="text-lg px-10 bg-white text-purple-900 hover:bg-gray-100 font-bold shadow-2xl">
@@ -103,3 +115,5 @@ export default function SpiritualHomepage() {
     </>
   );
 }
+
+    

@@ -18,6 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import LiveMeetingForm from './LiveMeetingForm';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import CourseForm from './CourseForm';
+import VerseOfTheDayForm from './VerseOfTheDayForm';
 
 const articleSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -121,11 +122,12 @@ export default function UploadPage() {
     <div>
       <h1 className="text-3xl font-headline font-bold mb-6">Add Content</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="article">Article</TabsTrigger>
           <TabsTrigger value="video">Video</TabsTrigger>
           <TabsTrigger value="course">Course</TabsTrigger>
           <TabsTrigger value="live-meeting">Live Meeting</TabsTrigger>
+          <TabsTrigger value="verse-of-the-day">Verse of the Day</TabsTrigger>
         </TabsList>
         <TabsContent value="article">
           <Card>
@@ -220,7 +222,12 @@ export default function UploadPage() {
          <TabsContent value="live-meeting">
           <LiveMeetingForm />
         </TabsContent>
+        <TabsContent value="verse-of-the-day">
+          <VerseOfTheDayForm />
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+    

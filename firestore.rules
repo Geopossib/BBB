@@ -120,6 +120,22 @@ service cloud.firestore {
     }
 
     /**
+     * @description Manages access to the Verse of the Day.
+     * @path /databases/{database}/documents/verseOfTheDay/{docId}
+     */
+    match /verseOfTheDay/{docId} {
+      /**
+       * @allow (get, list) Any user can read the verse of the day.
+       */
+      allow get, list: if true;
+
+      /**
+       * @allow (write) Only authenticated users (admins) can update the verse.
+       */
+      allow write: if isSignedIn();
+    }
+
+    /**
      * @description Manages access to user-specific data.
      * @path /databases/{database}/documents/users/{userId}
      */
@@ -160,3 +176,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
