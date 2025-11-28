@@ -78,44 +78,48 @@ export default function VerseOfTheDayForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p>Loading current verse...</p> : (
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                control={form.control}
-                name="text"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Verse Text</FormLabel>
-                    <FormControl>
-                        <Textarea placeholder="For God so loved the world..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="reference"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Reference</FormLabel>
-                    <FormControl>
-                        <Input placeholder="John 3:16" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <Button type="submit" className="w-full md:w-auto" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Updating...' : 'Update Verse'}
-                </Button>
-            </form>
-            </Form>
-        )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Verse Text</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={isLoading ? "Loading current verse..." : "For God so loved the world..."}
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="reference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reference</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={isLoading ? "Loading..." : "John 3:16"}
+                      disabled={isLoading}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full md:w-auto" disabled={form.formState.isSubmitting || isLoading}>
+              {form.formState.isSubmitting ? 'Updating...' : 'Update Verse'}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
 }
-
-    
