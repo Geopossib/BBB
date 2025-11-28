@@ -16,16 +16,32 @@ const defaultVerse = {
     reference: "John 3:16"
 };
 
+type Verse = {
+    text: string;
+    reference: string;
+};
+
 export default function SpiritualHomepage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [readArticlesCount, setReadArticlesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // verseToDisplay will hold the verse currently shown, preventing flickering.
+  const [verseToDisplay, setVerseToDisplay] = useState<Verse | null>(null);
+
   const verseDocRef = firestore ? doc(firestore, 'verseOfTheDay', 'current') : null;
+  // useDoc fetches the latest data from Firestore.
   const { data: verseData, isLoading: isVerseLoading } = useDoc(verseDocRef);
 
-  const verse = isVerseLoading ? null : (verseData || defaultVerse);
+  useEffect(() => {
+    // Only update the displayed verse if the fetch is complete and we have new data.
+    // If verseData is null after loading (i.e., no verse set in admin), use the default.
+    if (!isVerseLoading) {
+      setVerseToDisplay(verseData || defaultVerse);
+    }
+    // This effect runs whenever the live data (verseData) or loading state (isVerseLoading) changes.
+  }, [verseData, isVerseLoading]);
 
 
   useEffect(() => {
@@ -77,7 +93,7 @@ export default function SpiritualHomepage() {
           </Badge>
           <div className="max-w-5xl mx-auto">
             <Quote className="w-16 h-16 mx-auto mb-8 text-yellow-300 opacity-70" />
-            {isVerseLoading || !verse ? (
+            {!verseToDisplay ? (
                  <div className='space-y-4'>
                     <Skeleton className="h-16 w-full bg-white/20"/>
                     <Skeleton className="h-16 w-3/4 mx-auto bg-white/20"/>
@@ -85,8 +101,8 @@ export default function SpiritualHomepage() {
                 </div>
             ) : (
                 <>
-                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight font-serif">{verse.text}</h1>
-                    <p className="mt-8 text-2xl md:text-3xl text-yellow-200 font-medium">— {verse.reference} —</p>
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight font-serif">{verseToDisplay.text}</h1>
+                    <p className="mt-8 text-2xl md:text-3xl text-yellow-200 font-medium">— {verseToDisplay.reference} —</p>
                 </>
             )}
           </div>
@@ -96,8 +112,10 @@ export default function SpiritualHomepage() {
                 Start Reading Today <ArrowRight className="ml-3" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-10 border-2 border-white text-white hover:bg-white/20 backdrop-blur">
-              <MessageCircle className="mr-3" /> Prayer Community
+            <Button asChild size="lg" variant="outline" className="text-lg px-10 border-2 border-white text-white hover:bg-white/20 backdrop-blur">
+               <Link href="/prayer-and-counselling">
+                <MessageCircle className="mr-3" /> Prayer Community
+               </Link>
             </Button>
           </div>
         </div>
