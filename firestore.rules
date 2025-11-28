@@ -32,44 +32,4 @@ service cloud.firestore {
      * @path /databases/{database}/documents/videos/{videoId}
      * @allow (get, list) Unauthenticated users can read videos.
      * @allow (create, update, delete) Authenticated users can create, update, and delete videos.
-     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete videos.
-     * @principle Allows public reads with authenticated-user-only writes.
-     */
-    match /videos/{videoId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    /**
-     * @description Allows public read access to liveMeetings and restricts write access to authenticated users.
-     * @path /databases/{database}/documents/liveMeetings/{liveMeetingId}
-     * @allow (get, list) Unauthenticated users can read liveMeetings.
-     * @allow (create, update, delete) Authenticated users can create, update, and delete liveMeetings.
-     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete liveMeetings.
-     * @principle Allows public reads with authenticated-user-only writes.
-     */
-    match /liveMeetings/{liveMeetingId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    /**
-     * @description Public read access for courses and their lessons. Write access restricted to authenticated users.
-     * @path /databases/{database}/documents/courses/{courseId}
-     */
-    match /courses/{courseId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-
-      match /lessons/{lessonId} {
-        allow get, list: if true;
-        allow create, update, delete: if isSignedIn();
-      }
-    }
-  }
-
-  // Helper function to determine if a user is signed in
-  function isSignedIn() {
-    return request.auth != null;
-  }
-}
+     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete videos
