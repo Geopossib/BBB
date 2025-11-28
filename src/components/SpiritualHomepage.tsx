@@ -25,7 +25,7 @@ export default function SpiritualHomepage() {
   const verseDocRef = firestore ? doc(firestore, 'verseOfTheDay', 'current') : null;
   const { data: verseData, isLoading: isVerseLoading } = useDoc(verseDocRef);
 
-  const verse = verseData ? { text: verseData.text, reference: verseData.reference } : defaultVerse;
+  const verse = isVerseLoading ? null : (verseData || defaultVerse);
 
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function SpiritualHomepage() {
           </Badge>
           <div className="max-w-5xl mx-auto">
             <Quote className="w-16 h-16 mx-auto mb-8 text-yellow-300 opacity-70" />
-            {isVerseLoading ? (
+            {isVerseLoading || !verse ? (
                  <div className='space-y-4'>
                     <Skeleton className="h-16 w-full bg-white/20"/>
                     <Skeleton className="h-16 w-3/4 mx-auto bg-white/20"/>
@@ -115,5 +115,3 @@ export default function SpiritualHomepage() {
     </>
   );
 }
-
-    
