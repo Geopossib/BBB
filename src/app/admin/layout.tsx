@@ -42,20 +42,18 @@ export default function AdminLayout({
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // If auth is still loading, do nothing.
-    if (isUserLoading) return;
-
-    // If there's no user, redirect to the admin login page.
-    if (!user) {
-      router.push('/admin/login');
+    if (isUserLoading) {
+      // Still checking authentication, do nothing yet.
       return;
     }
-    
-    // If the user's email is not authorized, redirect to the homepage.
-    if (user.email !== AUTHORIZED_EMAIL) {
-        router.push('/');
-    }
 
+    if (!user) {
+      // If there's no user after loading, redirect to admin login.
+      router.push('/admin/login');
+    } else if (user.email !== AUTHORIZED_EMAIL) {
+      // If there is a user but they are not the authorized admin, redirect to homepage.
+      router.push('/');
+    }
   }, [user, isUserLoading, router]);
 
   const isActive = (href: string) => {
@@ -69,11 +67,15 @@ export default function AdminLayout({
     return pathname === href;
   }
 
-  // Render a loading state or null while checking for user to prevent flicker
+  // While loading or if user is not authorized, show a loading/verification screen.
+  // This prevents content from flashing before the redirect happens.
   if (isUserLoading || !user || user.email !== AUTHORIZED_EMAIL) {
     return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <div className="text-muted-foreground">Verifying access...</div>
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                Verifying access...
+            </div>
         </div>
     );
   }
