@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { Search, Menu, Home, Film, BookOpen, Video, ShieldCheck, GraduationCap, Users, LogOut, User as UserIcon } from 'lucide-react';
+import { Search, Menu, Home, Film, BookOpen, Video, ShieldCheck, GraduationCap, Users, LogOut, User as UserIcon, HeartHandshake } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -26,6 +26,7 @@ const navItems = [
   { href: '/blog', label: 'Articles', icon: BookOpen },
   { href: '/videos', label: 'Videos', icon: Film },
   { href: '/live-meetings', label: 'Live Meetings', icon: Video },
+  { href: '/prayer-and-counselling', label: 'Prayer & Counselling', icon: HeartHandshake },
   { href: '/about', label: 'About Us', icon: Users },
 ];
 

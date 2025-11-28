@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, BookOpen, Video, Users, ArrowRight, Heart } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Sparkles, BookOpen, Video, Users, ArrowRight, Heart, Mail } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -65,6 +66,25 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+       {/* Newsletter */}
+      <section className="py-20 bg-secondary/50">
+        <div className="container mx-auto px-6">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-3xl font-headline font-bold mb-4">Subscribe to our Newsletter</h2>
+            <p className="text-muted-foreground mb-8">
+              Receive weekly encouragement, updates on new teachings, and community news directly in your inbox.
+            </p>
+            <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+              <Input type="email" placeholder="Enter your email address" className="text-base" required />
+              <Button type="submit" size="lg" className="w-full sm:w-auto">
+                <Mail className="mr-2 h-4 w-4" />
+                Subscribe
+              </Button>
+            </form>
           </div>
         </div>
       </section>
