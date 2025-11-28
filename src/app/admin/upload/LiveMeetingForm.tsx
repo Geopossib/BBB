@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -56,7 +57,6 @@ export default function LiveMeetingForm() {
         form.reset();
       })
       .catch((error) => {
-        console.error('Error adding document: ', error);
         const permissionError = new FirestorePermissionError({
             path: liveMeetingsCollection.path,
             operation: 'create',

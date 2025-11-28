@@ -87,7 +87,6 @@ export default function CourseForm() {
       toast({ title: 'Success', description: 'Course created successfully!' });
       form.reset();
     } catch (error: any) {
-      console.error('Error creating course with batch: ', error);
       // Create and emit the detailed permission error
       const permissionError = new FirestorePermissionError({
           path: `courses/${courseDocRef.id}`, // Path for the main document
@@ -98,13 +97,6 @@ export default function CourseForm() {
           }
       });
       errorEmitter.emit('permission-error', permissionError);
-
-      // Show a generic error toast to the user
-      toast({
-          variant: 'destructive',
-          title: 'Error Creating Course',
-          description: 'You do not have the required permissions. Please check the console for details.'
-      });
     } finally {
       setIsSubmitting(false);
     }
