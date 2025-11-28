@@ -26,6 +26,8 @@ const navItems = [
     { href: '#', label: 'Settings', icon: Settings },
 ];
 
+const AUTHORIZED_EMAIL = 'goodeeamazon@gmail.com';
+
 
 export default function AdminLayout({
   children,
@@ -46,7 +48,14 @@ export default function AdminLayout({
     // If there's no user, redirect to the admin login page.
     if (!user) {
       router.push('/admin/login');
+      return;
     }
+    
+    // If the user's email is not authorized, redirect to the homepage.
+    if (user.email !== AUTHORIZED_EMAIL) {
+        router.push('/');
+    }
+
   }, [user, isUserLoading, router]);
 
   const isActive = (href: string) => {
@@ -61,10 +70,10 @@ export default function AdminLayout({
   }
 
   // Render a loading state or null while checking for user to prevent flicker
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || user.email !== AUTHORIZED_EMAIL) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
-            <div className="text-muted-foreground">Loading Admin...</div>
+            <div className="text-muted-foreground">Verifying access...</div>
         </div>
     );
   }
