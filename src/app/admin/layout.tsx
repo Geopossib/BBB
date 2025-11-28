@@ -53,8 +53,9 @@ export default function AdminLayout({
       return;
     }
 
-    // If the user's email does not match the authorized email, redirect to the homepage.
+    // If the user's email does not match the authorized email, alert and redirect to the homepage.
     if (user.email !== AUTHORIZED_EMAIL) {
+      alert('You are not authorized as an admin.');
       router.push('/');
     }
   }, [user, isUserLoading, router]);
@@ -123,3 +124,4 @@ export default function AdminLayout({
     </SidebarProvider>
   );
 }
+
