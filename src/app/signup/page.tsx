@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth, initiateGoogleSignIn, initiateEmailSignUp, useUser } from '@/firebase';
+import { useAuth, initiateGoogleSignIn, useUser, initiateEmailSignUp } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 const signupSchema = z.object({
@@ -28,7 +28,7 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
-
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -40,52 +40,92 @@ export default function SignupPage() {
     },
   });
 
+  // Only redirect if user is fully loaded AND already authenticated (non-anonymous)
   useEffect(() => {
-    // If user is logged in (and not anonymous), redirect them to the homepage.
     if (!isUserLoading && user && !user.isAnonymous) {
-      router.push('/');
+      router.replace('/'); // replace so they can't go back to signup
     }
   }, [user, isUserLoading, router]);
 
-  const handleGoogleSignIn = () => {
-    if (auth) {
-      initiateGoogleSignIn(auth);
+  const handleGoogleSignIn = async () => {
+    if (!auth) return;
+    setIsGoogleLoading(true);
+    try {
+      await initiateGoogleSignIn(auth);
+      // Success redirect is handled by auth state listener or useUser
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Google Sign-In Failed',
+        description: error.message || 'Please try again.',
+      });
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
-  const onSubmit: SubmitHandler<SignupFormValues> = (data) => {
-    if (auth) {
-      initiateEmailSignUp(auth, data.email, data.password)
-        .then(() => {
-           toast({ title: 'Success', description: 'Account created successfully!' });
-           router.push('/'); // Redirect to homepage on successful signup
-        })
-        .catch((error) => {
-            let description = "An unexpected error occurred.";
-            if (error.code === 'auth/email-already-in-use') {
-                description = "This email address is already in use by another account.";
-            }
-            toast({
-                variant: 'destructive',
-                title: 'Sign-up Failed',
-                description: description
-            });
-        });
+  const onSubmit: SubmitHandler<SignupFormValues> = async (data) => {
+    if (!auth) return;
+
+    try {
+      // Call your updated initiateEmailSignUp that accepts names
+      await initiateEmailSignUp(auth, data.email, data.password, data.firstName, data.lastName);
+
+      toast({
+        title: 'Welcome!',
+        description: `Account created successfully, ${data.firstName}!`,
+      });
+
+      router.replace('/');
+    } catch (error: any) {
+      let description = 'An unexpected error occurred.';
+
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          description = 'This email is already in use.';
+          break;
+        case 'auth/weak-password':
+          description = 'Password is too weak.';
+          break;
+        case 'auth/invalid-email':
+          description = 'Invalid email address.';
+          break;
+        default:
+          description = error.message || description;
+      }
+
+      toast({
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description,
+      });
     }
   };
+
+  // Show loading spinner while checking auth state
+  if (isUserLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
+
+  // If already logged in, show nothing (redirect is handled in useEffect)
+  if (user && !user.isAnonymous) {
+    return null;
+  }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] py-12">
+    <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] py-12 px-4">
       <Card className="mx-auto max-w-sm w-full">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline">Sign Up</CardTitle>
-          <CardDescription>
-            Enter your information to create an account
-          </CardDescription>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-headline">Create an account</CardTitle>
+          <CardDescription>Enter your details below to get started</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -94,7 +134,7 @@ export default function SignupPage() {
                     <FormItem>
                       <FormLabel>First name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Max" {...field} />
+                        <Input placeholder="Max" autoFocus {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -114,6 +154,7 @@ export default function SignupPage() {
                   )}
                 />
               </div>
+
               <FormField
                 control={form.control}
                 name="email"
@@ -127,6 +168,7 @@ export default function SignupPage() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="password"
@@ -140,18 +182,40 @@ export default function SignupPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating Account...' : 'Create an account'}
+
+              <Button
+                type="submit"
+                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                disabled={form.formState.isSubmitting || isGoogleLoading}
+              >
+                {form.formState.isSubmitting ? 'Creating Account...' : 'Create account'}
               </Button>
-              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} type="button">
-                Sign up with Google
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                type="button"
+                className="w-full"
+                onClick={handleGoogleSignIn}
+                disabled={isGoogleLoading || form.formState.isSubmitting}
+              >
+                {isGoogleLoading ? 'Signing in...' : 'Sign up with Google'}
               </Button>
             </form>
           </Form>
-          <div className="mt-4 text-center text-sm">
+
+          <div className="mt-6 text-center text-sm">
             Already have an account?{' '}
-            <Link href="/login" className="underline">
-              Login
+            <Link href="/login" className="underline font-medium">
+              Log in
             </Link>
           </div>
         </CardContent>

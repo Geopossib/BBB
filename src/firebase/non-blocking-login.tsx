@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  updateProfile,
   // Assume getAuth and app are initialized elsewhere
 } from 'firebase/auth';
 
@@ -18,11 +19,32 @@ export function initiateAnonymousSignIn(authInstance: Auth): void {
 }
 
 /** Initiate email/password sign-up (non-blocking). */
-export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): Promise<any> {
-  // CRITICAL: Call createUserWithEmailAndPassword directly. Do NOT use 'await createUserWithEmailAndPassword(...)'.
-  return createUserWithEmailAndPassword(authInstance, email, password);
-  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
-}
+export const initiateEmailSignUp = async (
+  auth: any,
+  email: string,
+  password: string,
+  firstName: string,
+  lastName: string
+) => {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
+
+  // Save name in Firebase Auth
+  await updateProfile(user, {
+    displayName: `${firstName} ${lastName}`.trim(),
+  });
+
+  // Optional: Save full profile in Firestore
+  // await setDoc(doc(db, 'users', user.uid), {
+  //   firstName,
+  //   lastName,
+  //   email,
+  //   createdAt: new Date().toISOString(),
+  // });
+
+  return userCredential;
+};
+
 
 /** Initiate email/password sign-in (non-blocking). */
 export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<any> {
