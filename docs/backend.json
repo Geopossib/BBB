@@ -73,6 +73,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "youtubeUrl", "order"]
+    },
+    "PrayerRequest": {
+        "title": "Prayer Request",
+        "description": "Represents a prayer or counselling request submitted by a user.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string", "description": "The name of the person making the request (optional)." },
+            "email": { "type": "string", "format": "email", "description": "The email address of the person for follow-up." },
+            "requestType": { "type": "string", "enum": ["prayer", "counselling"], "description": "The type of request." },
+            "message": { "type": "string", "description": "The detailed message of the request." },
+            "isAnonymous": { "type": "boolean", "description": "Indicates if the request was submitted anonymously." },
+            "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the request was created." },
+            "isRead": { "type": "boolean", "description": "Flag to mark if the request has been read by an admin." }
+        },
+        "required": ["email", "requestType", "message", "isAnonymous", "createdAt"]
     }
   },
   "auth": {
@@ -83,7 +98,8 @@
       "articles": { "$ref": "#/entities/Article", "description": "Stores articles uploaded by the admin." },
       "videos": { "$ref": "#/entities/Video", "description": "Stores videos uploaded by the admin." },
       "liveMeetings": { "$ref": "#/entities/LiveMeeting", "description": "Stores information about live meeting sessions." },
-      "courses": { "$ref": "#/entities/Course", "description": "Stores course overview information." }
+      "courses": { "$ref": "#/entities/Course", "description": "Stores course overview information." },
+      "prayerRequests": { "$ref": "#/entities/PrayerRequest", "description": "Stores prayer and counselling requests from users." }
     },
     "subcollections": {
       "/courses/{courseId}/lessons/{lessonId}": {

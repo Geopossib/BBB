@@ -1,7 +1,5 @@
-
 'use client';
 
-import { useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,9 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { HeartHandshake, Send } from 'lucide-react';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 const requestSchema = z.object({
   name: z.string().optional(),
@@ -20,39 +21,67 @@ const requestSchema = z.object({
     required_error: "You need to select a request type.",
   }),
   message: z.string().min(10, 'Your message must be at least 10 characters long.'),
+  isAnonymous: z.boolean().default(false),
+}).superRefine((data, ctx) => {
+  if (data.isAnonymous) {
+    data.name = 'Anonymous';
+  }
+  if (!data.isAnonymous && (!data.name || data.name.trim() === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['name'],
+        message: 'Name is required unless you are submitting anonymously.',
+      });
+  }
 });
 
 type RequestFormValues = z.infer<typeof requestSchema>;
 
-const RECIPIENT_EMAIL = 'goodeeamazon@gmail.com';
 
 export default function PrayerAndCounsellingPage() {
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
   const form = useForm<RequestFormValues>({
     resolver: zodResolver(requestSchema),
     defaultValues: {
       name: '',
       email: '',
       message: '',
+      isAnonymous: false,
     },
   });
 
   const onSubmit: SubmitHandler<RequestFormValues> = (data) => {
-    const subject = data.requestType === 'prayer' ? 'New Prayer Request' : 'New Counselling Request';
-    const body = `
-      New Request Received:
-      --------------------------
-      Name: ${data.name || 'Anonymous'}
-      Email: ${data.email}
-      Request Type: ${data.requestType}
-      --------------------------
-      Message:
-      ${data.message}
-    `;
+    if (!firestore) return;
 
-    const mailtoLink = `mailto:${RECIPIENT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    // Open the user's default email client
-    window.location.href = mailtoLink;
+    const requestData = {
+      name: data.isAnonymous ? 'Anonymous' : data.name,
+      email: data.email,
+      requestType: data.requestType,
+      message: data.message,
+      isAnonymous: data.isAnonymous,
+      createdAt: serverTimestamp(),
+      isRead: false,
+    };
+
+    const prayerRequestsCollection = collection(firestore, 'prayerRequests');
+    addDoc(prayerRequestsCollection, requestData)
+      .then(() => {
+        toast({
+          title: 'Request Sent',
+          description: 'Thank you for reaching out. Your request has been received.',
+        });
+        form.reset();
+      })
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+          path: prayerRequestsCollection.path,
+          operation: 'create',
+          requestResourceData: requestData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   return (
@@ -70,19 +99,42 @@ export default function PrayerAndCounsellingPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
+              
+               <FormField
                 control={form.control}
-                name="name"
+                name="isAnonymous"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name (Optional)</FormLabel>
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Submit Anonymously?
+                      </FormLabel>
+                       <p className="text-sm text-muted-foreground">
+                        If you check this, your name will not be recorded.
+                      </p>
+                    </div>
                     <FormControl>
-                      <Input placeholder="Your name" {...field} />
+                      <input type="checkbox" checked={field.value} onChange={field.onChange} className="h-5 w-5 rounded border-primary text-primary focus:ring-primary" />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              {!form.watch('isAnonymous') && (
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
@@ -93,9 +145,9 @@ export default function PrayerAndCounsellingPage() {
                     <FormControl>
                       <Input type="email" placeholder="your.email@example.com" {...field} />
                     </FormControl>
-                    <FormDescription>
-                        We will use this to get back to you.
-                    </FormDescription>
+                    <p className="text-sm text-muted-foreground">
+                        We will use this to get back to you. It will remain confidential.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -149,17 +201,17 @@ export default function PrayerAndCounsellingPage() {
                         {...field}
                       />
                     </FormControl>
-                     <FormDescription>
+                     <p className="text-sm text-muted-foreground">
                         Your request is confidential and will be handled with care.
-                    </FormDescription>
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" size="lg" className="w-full">
+              <Button type="submit" size="lg" className="w-full" disabled={form.formState.isSubmitting}>
                 <Send className="mr-2 h-4 w-4" />
-                Submit Request
+                {form.formState.isSubmitting ? 'Sending...' : 'Submit Request'}
               </Button>
             </form>
           </Form>

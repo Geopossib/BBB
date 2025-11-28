@@ -33,3 +33,74 @@ service cloud.firestore {
      * @allow (get, list) Unauthenticated users can read videos.
      * @allow (create, update, delete) Authenticated users can create, update, and delete videos.
      * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete videos
+     */
+    match /videos/{videoId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Allows public read access to live meetings and restricts write access to authenticated users.
+     * @path /databases/{database}/documents/liveMeetings/{meetingId}
+     * @allow (get, list) Unauthenticated users can read live meetings.
+     * @allow (create, update, delete) Authenticated users can create, update, and delete live meetings.
+     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete live meetings.
+     * @principle Allows public reads with authenticated-user-only writes.
+     */
+    match /liveMeetings/{meetingId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Allows public read access to courses and restricts write access to authenticated users.
+     * @path /databases/{database}/documents/courses/{courseId}
+     * @allow (get, list) Unauthenticated users can read courses.
+     * @allow (create, update, delete) Authenticated users can create, update, and delete courses.
+     * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete courses.
+     * @principle Allows public reads with authenticated-user-only writes.
+     */
+    match /courses/{courseId} {
+      allow get, list: if true;
+      allow write: if isSignedIn();
+
+      /**
+       * @description Allows public read access to lessons within a course and restricts write access to authenticated users.
+       * @path /databases/{database}/documents/courses/{courseId}/lessons/{lessonId}
+       * @allow (get, list) Unauthenticated users can read lessons.
+       * @allow (create, update, delete) Authenticated users can create, update, and delete lessons.
+       * @deny (create, update, delete) Unauthenticated users cannot create, update, or delete lessons.
+       */
+      match /lessons/{lessonId} {
+        allow get, list: if true;
+        allow write: if isSignedIn();
+      }
+    }
+    
+    /**
+     * @description Manages access to prayer and counselling requests.
+     * @path /databases/{database}/documents/prayerRequests/{requestId}
+     */
+    match /prayerRequests/{requestId} {
+      /**
+       * @allow (create) Any user (authenticated or not) can submit a new request.
+       * This allows for anonymous prayer requests.
+       */
+      allow create: if true;
+      
+      /**
+       * @allow (list, get, update) Only authenticated users (admins) can read or update requests.
+       * This protects the privacy of the requests.
+       */
+      allow list, get, update, delete: if isSignedIn();
+    }
+    
+    /**
+     * @description Helper function to check if a user is signed in.
+     * @returns {boolean} True if the user is authenticated, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+  }
+}
