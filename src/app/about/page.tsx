@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Target, Eye, HeartHandshake } from 'lucide-react';
+import { Target, Eye, HeartHandshake } from 'lucide-react';
 
 const teamMembers = [
     {
@@ -28,6 +28,12 @@ const coreValues = [
     "Devotion to God's Word",
     "Reaching out to those in need",
     "Kindness"
+];
+
+const missionPoints = [
+    "To raise broken and battered men and women who will become a tool in the hands of God to expand God's kingdom and expose the evil agenda of the devil.",
+    "To reach out to the lost souls.",
+    "To create a system by which men and women can be built strong in prayer and the Word."
 ];
 
 export default function AboutUsPage() {
@@ -64,17 +70,24 @@ export default function AboutUsPage() {
                     </p>
                 </CardContent>
             </Card>
-             <Card className="flex flex-col items-center text-center p-6">
-                <CardHeader>
+             <Card className="flex flex-col items-start text-left p-6">
+                <CardHeader className="w-full text-center">
                     <div className="mx-auto bg-accent/20 p-4 rounded-full w-fit mb-4">
                         <Target className="h-8 w-8 text-accent" />
                     </div>
                     <CardTitle className="font-headline text-2xl">Mission Statement</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2 text-muted-foreground">
-                    <p>To raise broken and battered men and women who will become a tool in the hands of God to expand God's kingdom and expose the evil agenda of the devil.</p>
-                    <p>To reach out to the lost souls.</p>
-                    <p>To create a system by which men and women can be built strong in prayer and the Word.</p>
+                <CardContent className="space-y-3 text-muted-foreground">
+                    <ul className="space-y-2">
+                        {missionPoints.map((point, index) => (
+                             <li key={index} className="flex items-start gap-3">
+                                <div className="bg-accent/20 p-1 rounded-full mt-1 flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-accent"><path d="M20 6 9 17l-5-5"></path></svg>
+                                </div>
+                                <span>{point}</span>
+                            </li>
+                        ))}
+                    </ul>
                 </CardContent>
             </Card>
         </section>
