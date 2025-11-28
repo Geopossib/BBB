@@ -40,6 +40,7 @@ export default function AdminDashboardPage() {
         }
 
         async function loadSubscribers() {
+            setLoadingSubscribers(true);
             try {
                 const subs = await getDocuments<Subscriber>('subscribers');
                 setSubscribers(subs);
@@ -66,7 +67,7 @@ export default function AdminDashboardPage() {
         </Card>
     );
     
-    const formatDate = (timestamp: Timestamp) => {
+    const formatDate = (timestamp: Timestamp | undefined) => {
         if (!timestamp) return 'N/A';
         return new Date(timestamp.seconds * 1000).toLocaleDateString('en-US', {
             year: 'numeric',
