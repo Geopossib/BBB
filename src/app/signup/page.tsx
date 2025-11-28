@@ -63,25 +63,34 @@ export default function SignupPage() {
   // Redirect if user is fully loaded AND already authenticated (non-anonymous)
   useEffect(() => {
     if (!isUserLoading && user && !user.isAnonymous) {
-      router.replace('/'); // replace so they can't go back to signup
+      router.replace('/dashboard'); 
     }
   }, [user, isUserLoading, router]);
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     if (!auth) return;
     setIsGoogleLoading(true);
-    try {
-      await initiateGoogleSignIn(auth);
-      // Success redirect is handled by the auth state listener and the useEffect above
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Google Sign-In Failed',
-        description: error.message || 'Please try again.',
+    initiateGoogleSignIn(auth)
+      .then(() => {
+        // Success is handled by the auth state listener in the useEffect hook.
+        // No need to do anything here, it will redirect automatically.
+      })
+      .catch((error: any) => {
+        let description = 'An unexpected error occurred. Please try again.';
+        if (error.code === 'auth/popup-closed-by-user') {
+          description = 'The sign-in window was closed. Please try again.';
+        } else if (error.code === 'auth/popup-blocked') {
+            description = 'Your browser blocked the sign-in pop-up. Please enable pop-ups for this site and try again.';
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Google Sign-In Failed',
+          description: description,
+        });
+      })
+      .finally(() => {
+        setIsGoogleLoading(false);
       });
-    } finally {
-      setIsGoogleLoading(false);
-    }
   };
 
   const onSubmit: SubmitHandler<SignupFormValues> = async (data) => {
