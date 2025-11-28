@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     // If user is logged in (and not anonymous), redirect them to the admin dashboard.
-    if (!isUserLoading && user) {
+    if (!isUserLoading && user && !user.isAnonymous) {
       router.push('/admin');
     }
   }, [user, isUserLoading, router]);
@@ -57,9 +57,12 @@ export default function AdminLoginPage() {
         })
         .catch((error) => {
           let description = "An unexpected error occurred.";
-          if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            description = "Invalid email or password. Please try again.";
+          if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+            description = "This admin account does not exist. Please contact the main administrator.";
+          } else if (error.code === 'auth/wrong-password') {
+            description = "Invalid password. Please try again.";
           }
+          
           toast({
             variant: 'destructive',
             title: 'Login Failed',
