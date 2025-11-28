@@ -54,15 +54,7 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 /** Initiate Google sign-in (non-blocking). */
-export function initiateGoogleSignIn(authInstance: Auth): void {
+export function initiateGoogleSignIn(authInstance: Auth): Promise<any> {
   const provider = new GoogleAuthProvider();
-  // CRITICAL: Call signInWithPopup directly. Do NOT use 'await signInWithPopup(...)'.
-  signInWithPopup(authInstance, provider).catch((error) => {
-    // Handle Errors here.
-    // The most common error is the user closing the popup.
-    if (error.code !== 'auth/popup-closed-by-user') {
-      console.error("Google Sign-In Error:", error);
-    }
-  });
-  // Code continues immediately. Auth state change is handled by the onAuthStateChanged listener.
+  return signInWithPopup(authInstance, provider);
 }
