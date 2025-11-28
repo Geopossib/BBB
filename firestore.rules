@@ -94,6 +94,29 @@ service cloud.firestore {
        */
       allow list, get, update, delete: if isSignedIn();
     }
+
+    /**
+     * @description Manages access to newsletter subscribers.
+     * @path /databases/{database}/documents/subscribers/{subscriberId}
+     */
+    match /subscribers/{subscriberId} {
+        /**
+         * @allow (create) Any user can add their email to the subscribers list.
+         */
+        allow create: if true;
+
+        /**
+         * @allow (list, get) Only authenticated users (admins) can read the list of subscribers.
+         * This protects user privacy.
+         */
+        allow list, get: if isSignedIn();
+
+        /**
+         * @deny (update, delete) No one is allowed to update or delete subscriber records from the client.
+         * This should be handled server-side or directly in the Firebase console.
+         */
+        allow update, delete: if false;
+    }
     
     /**
      * @description Helper function to check if a user is signed in.

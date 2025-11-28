@@ -1,12 +1,63 @@
+
 'use client';
 
 import Link from 'next/link';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Sparkles, BookOpen, Video, Users, ArrowRight, Heart, Mail } from 'lucide-react';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
+const newsletterSchema = z.object({
+  email: z.string().email('Please enter a valid email address.'),
+});
+
+type NewsletterFormValues = z.infer<typeof newsletterSchema>;
 
 export default function LandingPage() {
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const form = useForm<NewsletterFormValues>({
+    resolver: zodResolver(newsletterSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
+
+  const onSubmit: SubmitHandler<NewsletterFormValues> = (data) => {
+    if (!firestore) return;
+
+    const subscriberData = {
+      email: data.email,
+      subscribedAt: serverTimestamp(),
+    };
+
+    const subscribersCollection = collection(firestore, 'subscribers');
+    addDoc(subscribersCollection, subscriberData)
+      .then(() => {
+        toast({
+          title: 'Subscribed!',
+          description: 'Thank you for subscribing to our newsletter.',
+        });
+        form.reset();
+      })
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+          path: subscribersCollection.path,
+          operation: 'create',
+          requestResourceData: subscriberData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
       {/* Hero */}
@@ -78,13 +129,26 @@ export default function LandingPage() {
             <p className="text-muted-foreground mb-8">
               Receive weekly encouragement, updates on new teachings, and community news directly in your inbox.
             </p>
-            <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <Input type="email" placeholder="Enter your email address" className="text-base" required />
-              <Button type="submit" size="lg" className="w-full sm:w-auto">
-                <Mail className="mr-2 h-4 w-4" />
-                Subscribe
-              </Button>
-            </form>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormControl>
+                        <Input type="email" placeholder="Enter your email address" className="text-base" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  {form.formState.isSubmitting ? 'Subscribing...' : 'Subscribe'}
+                </Button>
+              </form>
+            </Form>
           </div>
         </div>
       </section>
