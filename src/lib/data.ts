@@ -64,9 +64,13 @@ export async function getDocuments<T>(collectionName: string, options?: { limit?
     return [];
   }
   const colRef = collection(firestore, collectionName);
+  
+  // Use 'subscribedAt' for subscribers, 'createdAt' for others.
+  const orderByField = collectionName === 'subscribers' ? 'subscribedAt' : 'createdAt';
+  
   const q = options?.limit 
-    ? query(colRef, orderBy('createdAt', 'desc'), queryLimit(options.limit))
-    : query(colRef, orderBy('createdAt', 'desc'));
+    ? query(colRef, orderBy(orderByField, 'desc'), queryLimit(options.limit))
+    : query(colRef, orderBy(orderByField, 'desc'));
   
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
