@@ -11,8 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAuth, initiateGoogleSignIn, useUser, initiateEmailSignUp } from '@/firebase';
+import { useAuth, initiateGoogleSignIn, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 const signupSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -22,6 +23,25 @@ const signupSchema = z.object({
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
+
+// This function should be in a firebase file, but for simplicity of this fix, we define it here.
+const initiateEmailSignUp = async (
+  auth: any,
+  email: string,
+  password: string,
+  firstName: string,
+  lastName: string
+) => {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
+
+  // Save name in Firebase Auth
+  await updateProfile(user, {
+    displayName: `${firstName} ${lastName}`.trim(),
+  });
+
+  return userCredential;
+};
 
 export default function SignupPage() {
   const auth = useAuth();
