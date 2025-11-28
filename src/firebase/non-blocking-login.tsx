@@ -34,15 +34,26 @@ export const initiateEmailSignUp = async (
     displayName: `${firstName} ${lastName}`.trim(),
   });
 
-  // Optional: Save full profile in Firestore
-  // await setDoc(doc(db, 'users', user.uid), {
-  //   firstName,
-  //   lastName,
-  //   email,
-  //   createdAt: new Date().toISOString(),
-  // });
-
   return userCredential;
+};
+
+export const updateUserProfileAndPhoto = async (
+  auth: any,
+  firstName: string,
+  lastName: string,
+  photoURL: string | null
+) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No user is currently signed in.");
+
+  await updateProfile(user, {
+    displayName: `${firstName} ${lastName}`.trim(),
+    photoURL: photoURL,
+  });
+
+  // Force refresh the user token to get the latest profile info
+  await user.reload();
+  return auth.currentUser;
 };
 
 
