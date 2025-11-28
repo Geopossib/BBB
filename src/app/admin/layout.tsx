@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { LayoutDashboard, Settings, Video, PlusSquare } from 'lucide-react';
+import { LayoutDashboard, Settings, Video, PlusSquare, FileText } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -18,10 +18,12 @@ import { BsnConnectLogo } from '@/components/icons';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useEffect } from 'react';
+import Image from 'next/image';
 
 const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/upload', label: 'Add Content', icon: PlusSquare },
+    { href: '/admin/manage/articles', label: 'Manage Articles', icon: FileText },
     { href: '/admin/upload?tab=live-meeting', label: 'Live Meetings', icon: Video },
     { href: '#', label: 'Settings', icon: Settings },
 ];
@@ -68,6 +70,9 @@ export default function AdminLayout({
     if (href === '/admin/upload' && activeTab && activeTab !== 'article' && activeTab !== 'video') {
         return false;
     }
+     if (href === '/admin/manage/articles' && pathname.startsWith('/admin/manage/articles')) {
+      return true;
+    }
     return pathname === href;
   }
 
@@ -90,7 +95,7 @@ export default function AdminLayout({
       <Sidebar>
         <SidebarHeader>
            <div className="flex items-center gap-2">
-            <BsnConnectLogo className="size-7 text-primary" />
+            <Image src="https://i.ibb.co/pW6Vc7B/logo.png" alt="BSN Connect Logo" width={28} height={28} className="text-primary" />
             <span className="text-xl font-headline font-bold">Admin Panel</span>
           </div>
         </SidebarHeader>
@@ -124,4 +129,3 @@ export default function AdminLayout({
     </SidebarProvider>
   );
 }
-

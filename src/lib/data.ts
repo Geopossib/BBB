@@ -1,7 +1,7 @@
 
 'use client';
 
-import { collection, getDocs, doc, getDoc, query, orderBy, limit as queryLimit, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, orderBy, limit as queryLimit, where, updateDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import type { Timestamp } from 'firebase/firestore';
@@ -85,6 +85,25 @@ export async function getArticles(options?: { limit?: number }): Promise<Article
   }));
 }
 
+export async function getArticleById(id: string): Promise<Article | undefined> {
+    if (!firestore) {
+      console.error("Firestore is not initialized.");
+      return undefined;
+    }
+    const docRef = doc(firestore, 'articles', id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) {
+        return undefined;
+    }
+    const data = docSnap.data();
+    return {
+        id: docSnap.id,
+        ...data,
+        date: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+    } as Article;
+}
+
+
 export async function getArticleBySlug(slug: string): Promise<Article | undefined> {
     if (!firestore) {
       console.error("Firestore is not initialized.");
@@ -146,4 +165,13 @@ export async function getLessonsForCourse(courseId: string): Promise<Lesson[]> {
   const q = query(lessonsColRef, orderBy('order', 'asc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lesson));
+}
+
+export async function updateArticle(id: string, data: Partial<Article>) {
+  if (!firestore) {
+    console.error("Firestore is not initialized.");
+    throw new Error("Firestore not initialized");
+  }
+  const docRef = doc(firestore, 'articles', id);
+  await updateDoc(docRef, data);
 }
