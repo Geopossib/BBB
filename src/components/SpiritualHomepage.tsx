@@ -25,6 +25,7 @@ export default function SpiritualHomepage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [readArticlesCount, setReadArticlesCount] = useState(0);
+  const [watchedVideosCount, setWatchedVideosCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // verseToDisplay will hold the verse currently shown, preventing flickering.
@@ -53,8 +54,13 @@ export default function SpiritualHomepage() {
       setLoading(true);
       try {
         const readArticlesRef = collection(firestore, 'users', user.uid, 'readArticles');
-        const snapshot = await getDocs(readArticlesRef);
-        setReadArticlesCount(snapshot.size);
+        const articlesSnapshot = await getDocs(readArticlesRef);
+        setReadArticlesCount(articlesSnapshot.size);
+
+        const watchedVideosRef = collection(firestore, 'users', user.uid, 'watchedVideos');
+        const videosSnapshot = await getDocs(watchedVideosRef);
+        setWatchedVideosCount(videosSnapshot.size);
+
       } catch (error) {
         console.error("Error fetching user stats:", error);
       } finally {
@@ -125,7 +131,7 @@ export default function SpiritualHomepage() {
       <section className="relative -mt-20 container mx-auto px-6 z-20">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <StatCard title="Articles Read" value={readArticlesCount} icon={<BookOpen className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-purple-600 to-pink-600" />
-          <StatCard title="Videos Watched" value={0} icon={<Video className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-blue-600 to-cyan-600" />
+          <StatCard title="Videos Watched" value={watchedVideosCount} icon={<Video className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-blue-600 to-cyan-600" />
           <StatCard title="Souls Encouraged" value={0} icon={<Heart className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-red-600 to-pink-600" />
           <StatCard title="Faith Family" value={0} icon={<Users className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-green-600 to-emerald-600" />
         </div>

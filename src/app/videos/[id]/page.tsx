@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 type VideoPageProps = {
   params: {
@@ -28,6 +30,8 @@ export default function VideoPage({ params }: VideoPageProps) {
   const [video, setVideo] = useState<Video | null>(null);
   const [allVideos, setAllVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   useEffect(() => {
     async function loadVideoData() {
@@ -51,6 +55,18 @@ export default function VideoPage({ params }: VideoPageProps) {
     }
     loadVideoData();
   }, [params.id]);
+
+  useEffect(() => {
+    // When the video has loaded and the user is logged in, record the view.
+    if (video && user && firestore) {
+      const watchedVideoRef = doc(firestore, 'users', user.uid, 'watchedVideos', video.id);
+      setDoc(watchedVideoRef, { 
+        videoId: video.id,
+        watchedAt: serverTimestamp(),
+        title: video.title,
+      }, { merge: true });
+    }
+  }, [video, user, firestore]);
 
   const getImage = (id: string) => {
     return PlaceHolderImages.find((img) => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/400/225`;

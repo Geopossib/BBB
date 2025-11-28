@@ -156,6 +156,17 @@ service cloud.firestore {
          */
         allow get, list, write: if isOwner(userId);
       }
+
+      /**
+       * @description Manages user's watch history.
+       * @path /databases/{database}/documents/users/{userId}/watchedVideos/{videoId}
+       */
+      match /watchedVideos/{videoId} {
+        /**
+         * @allow (get, list, write) Authenticated users can read and write to their own watch history.
+         */
+        allow get, list, write: if isOwner(userId);
+      }
     }
     
     /**
@@ -176,5 +187,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

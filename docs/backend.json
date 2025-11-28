@@ -22,6 +22,17 @@
       },
       "required": ["articleId", "readAt", "title"]
     },
+    "WatchedVideo": {
+      "title": "Watched Video",
+      "description": "A record indicating that a user has watched a specific video.",
+      "type": "object",
+      "properties": {
+        "videoId": { "type": "string", "description": "The ID of the video that was watched." },
+        "watchedAt": { "type": "string", "format": "date-time", "description": "The timestamp when the video was watched." },
+        "title": { "type": "string", "description": "The title of the video that was watched." }
+      },
+      "required": ["videoId", "watchedAt", "title"]
+    },
     "Article": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Article",
@@ -155,9 +166,11 @@
       "/users/{userId}/readArticles/{articleId}": {
         "schema": { "$ref": "#/entities/ReadArticle" },
         "description": "Stores records of articles read by a user."
+      },
+      "/users/{userId}/watchedVideos/{videoId}": {
+        "schema": { "$ref": "#/entities/WatchedVideo" },
+        "description": "Stores records of videos watched by a user."
       }
     }
   }
 }
-
-    
