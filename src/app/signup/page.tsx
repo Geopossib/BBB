@@ -40,7 +40,7 @@ export default function SignupPage() {
     },
   });
 
-  // Only redirect if user is fully loaded AND already authenticated (non-anonymous)
+  // Redirect if user is fully loaded AND already authenticated (non-anonymous)
   useEffect(() => {
     if (!isUserLoading && user && !user.isAnonymous) {
       router.replace('/'); // replace so they can't go back to signup
@@ -52,7 +52,7 @@ export default function SignupPage() {
     setIsGoogleLoading(true);
     try {
       await initiateGoogleSignIn(auth);
-      // Success redirect is handled by auth state listener or useUser
+      // Success redirect is handled by the auth state listener and the useEffect above
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -68,27 +68,25 @@ export default function SignupPage() {
     if (!auth) return;
 
     try {
-      // Call your updated initiateEmailSignUp that accepts names
       await initiateEmailSignUp(auth, data.email, data.password, data.firstName, data.lastName);
 
       toast({
         title: 'Welcome!',
         description: `Account created successfully, ${data.firstName}!`,
       });
-
-      router.replace('/');
+      // The useEffect hook will handle the redirect on the next render
     } catch (error: any) {
       let description = 'An unexpected error occurred.';
 
       switch (error.code) {
         case 'auth/email-already-in-use':
-          description = 'This email is already in use.';
+          description = 'This email is already in use. Please try logging in.';
           break;
         case 'auth/weak-password':
-          description = 'Password is too weak.';
+          description = 'Password is too weak. Please use at least 6 characters.';
           break;
         case 'auth/invalid-email':
-          description = 'Invalid email address.';
+          description = 'The email address is not valid.';
           break;
         default:
           description = error.message || description;
@@ -102,16 +100,16 @@ export default function SignupPage() {
     }
   };
 
-  // Show loading spinner while checking auth state
+  // Show a loading state while checking the user's auth status
   if (isUserLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      <div className="flex items-center justify-center min-h-[calc(100vh-10rem)]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  // If already logged in, show nothing (redirect is handled in useEffect)
+  // If user is already logged in (non-anonymous), render nothing while redirect happens
   if (user && !user.isAnonymous) {
     return null;
   }
