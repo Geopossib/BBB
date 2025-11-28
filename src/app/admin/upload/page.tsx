@@ -119,16 +119,18 @@ export default function UploadPage() {
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-headline font-bold mb-6">Add Content</h1>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-headline font-bold">Add Content</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="article">Article</TabsTrigger>
-          <TabsTrigger value="video">Video</TabsTrigger>
-          <TabsTrigger value="course">Course</TabsTrigger>
-          <TabsTrigger value="live-meeting">Live Meeting</TabsTrigger>
-          <TabsTrigger value="verse-of-the-day">Verse of the Day</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+            <TabsList className="inline-grid w-full grid-cols-2 sm:w-auto sm:grid-cols-5">
+            <TabsTrigger value="article">Article</TabsTrigger>
+            <TabsTrigger value="video">Video</TabsTrigger>
+            <TabsTrigger value="course">Course</TabsTrigger>
+            <TabsTrigger value="live-meeting">Live Meeting</TabsTrigger>
+            <TabsTrigger value="verse-of-the-day">Verse of the Day</TabsTrigger>
+            </TabsList>
+        </div>
         <TabsContent value="article">
           <Card>
             <CardHeader>
@@ -137,7 +139,7 @@ export default function UploadPage() {
             </CardHeader>
             <CardContent>
               <Form {...articleForm}>
-                <form onSubmit={articleForm.handleSubmit(onArticleSubmit)} className="space-y-4">
+                <form onSubmit={articleForm.handleSubmit(onArticleSubmit)} className="space-y-6">
                   <FormField control={articleForm.control} name="title" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Title</FormLabel>
@@ -186,7 +188,7 @@ export default function UploadPage() {
             </CardHeader>
             <CardContent>
               <Form {...videoForm}>
-                <form onSubmit={videoForm.handleSubmit(onVideoSubmit)} className="space-y-4">
+                <form onSubmit={videoForm.handleSubmit(onVideoSubmit)} className="space-y-6">
                   <FormField control={videoForm.control} name="title" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Title</FormLabel>
