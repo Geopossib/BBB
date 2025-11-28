@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,11 +25,9 @@ export default function SpiritualHomepage() {
 
   useEffect(() => {
     async function load() {
-      try {
-        const [articles, videos] = await Promise.all([getArticles(), getVideos()]);
-        setStats({ articles: articles.length, videos: videos.length });
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
+      // This is a placeholder for loading actual user stats in the future.
+      // For now, we are keeping them at 0.
+      setLoading(false); 
     }
     load();
   }, []);
@@ -66,8 +65,10 @@ export default function SpiritualHomepage() {
             <p className="mt-8 text-2xl md:text-3xl text-yellow-200 font-medium">— {verse.reference} —</p>
           </div>
           <div className="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
-            <Button size="lg" className="text-lg px-10 bg-white text-purple-900 hover:bg-gray-100 font-bold shadow-2xl">
-              Start Reading Today <ArrowRight className="ml-3" />
+            <Button asChild size="lg" className="text-lg px-10 bg-white text-purple-900 hover:bg-gray-100 font-bold shadow-2xl">
+              <Link href="/blog">
+                Start Reading Today <ArrowRight className="ml-3" />
+              </Link>
             </Button>
             <Button size="lg" variant="outline" className="text-lg px-10 border-2 border-white text-white hover:bg-white/20 backdrop-blur">
               <MessageCircle className="mr-3" /> Prayer Community
@@ -79,10 +80,10 @@ export default function SpiritualHomepage() {
       {/* Stats */}
       <section className="relative -mt-20 container mx-auto px-6 z-20">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Bible Teachings" value={stats.articles} icon={<BookOpen className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-purple-600 to-pink-600" />
-          <StatCard title="Video Sermons" value={stats.videos} icon={<Video className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-blue-600 to-cyan-600" />
-          <StatCard title="Souls Encouraged" value={3847} icon={<Heart className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-red-600 to-pink-600" />
-          <StatCard title="Faith Family" value={12750} icon={<Users className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-green-600 to-emerald-600" />
+          <StatCard title="Articles Read" value={0} icon={<BookOpen className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-purple-600 to-pink-600" />
+          <StatCard title="Videos Watched" value={0} icon={<Video className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-blue-600 to-cyan-600" />
+          <StatCard title="Souls Encouraged" value={0} icon={<Heart className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-red-600 to-pink-600" />
+          <StatCard title="Faith Family" value={0} icon={<Users className="w-8 h-8 text-white" />} gradient="bg-gradient-to-br from-green-600 to-emerald-600" />
         </div>
       </section>
     </>
