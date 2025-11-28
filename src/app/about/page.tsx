@@ -2,23 +2,24 @@
 
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Target, Eye, HeartHandshake } from 'lucide-react';
+import { Target, Eye, HeartHandshake, User } from 'lucide-react';
 
 const teamMembers = [
     {
-        name: 'Pastor John Doe',
-        role: 'Senior Pastor',
-        imageUrl: 'https://picsum.photos/seed/pastor1/400/400'
+        name: 'ELSHADDI UDONSEK',
+        role: ''
     },
     {
-        name: 'Jane Smith',
-        role: 'Music Director',
-        imageUrl: 'https://picsum.photos/seed/director1/400/400'
+        name: 'GOODLUCK GEORGE',
+        role: 'Administrator'
     },
     {
-        name: 'Samuel Green',
-        role: 'Youth Coordinator',
-        imageUrl: 'https://picsum.photos/seed/youth1/400/400'
+        name: 'UTIBE-MFON ABASI',
+        role: 'Administrator'
+    },
+    {
+        name: 'DIVINE EBUNE',
+        role: 'Administrator'
     }
 ];
 
@@ -120,15 +121,15 @@ export default function AboutUsPage() {
         <section>
           <div className="max-w-5xl mx-auto text-center">
             <h2 className="text-3xl font-headline font-bold mb-8">Meet the Team</h2>
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                {teamMembers.map((member) => (
-                <Card key={member.name} className="overflow-hidden">
-                    <div className="relative aspect-square">
-                        <Image src={member.imageUrl} alt={member.name} fill className="object-cover" />
+                <Card key={member.name} className="overflow-hidden p-6 flex flex-col items-center justify-center">
+                    <div className="bg-secondary p-4 rounded-full mb-4">
+                        <User className="h-10 w-10 text-secondary-foreground" />
                     </div>
-                    <CardContent className="p-4 text-center">
+                    <CardContent className="p-0 text-center">
                         <p className="text-lg font-semibold">{member.name}</p>
-                        <p className="text-sm text-muted-foreground">{member.role}</p>
+                        {member.role && <p className="text-sm text-muted-foreground">{member.role}</p>}
                     </CardContent>
                 </Card>
                ))}
