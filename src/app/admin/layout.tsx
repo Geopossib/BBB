@@ -17,7 +17,7 @@ import {
 import { BsnConnectLogo } from '@/components/icons';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import Image from 'next/image';
 
 const navItems = [
@@ -31,11 +31,7 @@ const navItems = [
 const AUTHORIZED_EMAIL = 'goodeeamazon@gmail.com';
 
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -44,6 +40,8 @@ export default function AdminLayout({
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
+    if (pathname === '/admin/login') return;
+
     // Wait until the authentication check is complete.
     if (isUserLoading) {
       return;
@@ -60,7 +58,7 @@ export default function AdminLayout({
       alert('You are not authorized as an admin.');
       router.push('/');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, pathname]);
 
   const isActive = (href: string) => {
     if (href.includes('?tab=')) {
@@ -74,6 +72,12 @@ export default function AdminLayout({
       return true;
     }
     return pathname === href;
+  }
+
+  // If we are on the login page, don't render the admin layout.
+  // The useEffect above handles redirects for authenticated users away from login.
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
   }
 
   // While loading, or if the user is not authenticated and authorized, show a verification screen.
@@ -128,4 +132,22 @@ export default function AdminLayout({
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Wrapping the content in Suspense is necessary because AdminLayoutContent
+  // uses the useSearchParams() hook, which requires a Suspense boundary
+  // for server-side rendering during the build process.
+  return (
+    <Suspense>
+      <AdminLayoutContent>
+        {children}
+      </AdminLayoutContent>
+    </Suspense>
+  )
 }
